@@ -28,6 +28,7 @@ import {
   Info
 } from 'lucide-react';
 import { BrowserDb } from '../lib/browserDb';
+import TestCaseModal from './TestCaseModal';
 import { Run, TestCase } from '../types';
 import { useEffect } from 'react';
 
@@ -37,6 +38,9 @@ interface ComparisonViewProps {
 }
 
 export default function ComparisonView({ onSelectTest, onShowToast }: ComparisonViewProps) {
+  const [modalTestCaseId, setModalTestCaseId] = useState<string | null>(null);
+  const allTestCases = BrowserDb.getTestCases();
+
   // Real-time Database state
   const [runs, setRuns] = useState<Run[]>(BrowserDb.getRuns());
   const [testCases, setTestCases] = useState<TestCase[]>(BrowserDb.getTestCases());
@@ -59,24 +63,17 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
   const [expandedTestId, setExpandedTestId] = useState<string | null>(null);
 
   // Find the Run objects
-  const runA = useMemo(() => runs.find(r => r.id === runAId) || runs[0], [runAId, runs]);
-  const runB = useMemo(() => runs.find(r => r.id === runBId) || runs[1], [runBId, runs]);
+const runA = useMemo(() => runs.find(r => r.id === runAId) || runs[0], [runAId, runs]);
+  const runB = useMemo(() => runs.find(r => r.id === runBId) || runs[1] || runs[0], [runBId, runs]);
 
-  // Handle setting presets
-  const handlePreset = (type: 'reg' | 'sec' | 'smoke') => {
-    if (type === 'reg') {
-      setRunAId('RUN-8491-BZ'); // API Latency Sanity (100% passed)
-      setRunBId('RUN-8492-AX'); // Payment Gateway V2 (82.1% passed, 3 failed)
-    } else if (type === 'sec') {
-      setRunAId('RUN-9479-sec'); // Data Sanitization (100%)
-      setRunBId('RUN-9482-sec'); // Core Auth Suite (98.5%)
-    } else if (type === 'smoke') {
-      setRunAId('RUN-9479-sec'); // UAT Baseline
-      setRunBId('RUN-9480-smk'); // Smoke Frontend Navigation
-    }
-    setActiveFilter('all');
-    setExpandedTestId(null);
-  };
+  if (!runA || !runB) {
+    return (
+      <div className="flex-1 p-8 overflow-y-auto bg-[#0a0a0a] text-white font-sans flex items-center justify-center">
+        <div className="text-zinc-500 text-sm">Not enough runs to compare. At least 2 runs are required.</div>
+      </div>
+    );
+  }
+
 
   // Helper to parse duration string (e.g. "12m 45s", "450ms", "1.2s") into seconds
   const parseDurationToSeconds = (durationStr: string): number => {
@@ -101,6 +98,20 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
     return totalSeconds || parseFloat(cleanStr) || 0;
   };
 
+  const handlePreset = (type: 'reg' | 'sec' | 'smoke') => {
+    if (type === 'reg') {
+      setRunAId('RUN-8491-BZ');
+      setRunBId('RUN-8492-AX');
+    } else if (type === 'sec') {
+      setRunAId('RUN-9479-sec');
+      setRunBId('RUN-9482-sec');
+    } else if (type === 'smoke') {
+      setRunAId('RUN-9479-sec');
+      setRunBId('RUN-9480-smk');
+    }
+    setActiveFilter('all');
+    setExpandedTestId(null);
+  };
   // Compute stats difference
   const passRateDiff = runB.passRate - runA.passRate;
   const durationASeconds = parseDurationToSeconds(runA.duration);
@@ -224,7 +235,7 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'Passed': return <CheckCircle size={14} className="text-[#4caf50]" />;
+      case 'Passed': return <CheckCircle size={14} className="text-green-500" />;
       case 'Failed': return <XCircle size={14} className="text-red-500" />;
       case 'Flaky': return <AlertTriangle size={14} className="text-amber-500" />;
       case 'Skipped': return <Info size={14} className="text-zinc-500" />;
@@ -235,7 +246,7 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'Passed':
-        return <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-[#4caf50]/10 text-[#4caf50] border border-[#4caf50]/20">Passed</span>;
+        return <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-500/10 text-green-500 border border-green-500/20">Passed</span>;
       case 'Failed':
         return <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20">Failed</span>;
       case 'Flaky':
@@ -249,7 +260,7 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
 
   const getStatusTextClass = (status: string) => {
     switch (status) {
-      case 'Passed': return 'text-[#4caf50]';
+      case 'Passed': return 'text-green-500';
       case 'Failed': return 'text-red-400';
       case 'Flaky': return 'text-amber-400';
       default: return 'text-zinc-500';
@@ -257,13 +268,13 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#0c0c0c] text-zinc-100 select-none font-sans" id="comparison-view-container">
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-zinc-950 text-zinc-100 select-none font-sans" id="comparison-view-container">
       {/* Banner Controls Panel */}
-      <div className="p-4 bg-[#111111] border-b border-[#262626] flex flex-col gap-4">
+      <div className="p-4 bg-zinc-950 border-b border-zinc-800 flex flex-col gap-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-lg font-bold text-zinc-200 flex items-center gap-2">
-              <GitCompare size={20} className="text-[#4daeff]" /> Telemetry Comparison Studio
+              <GitCompare size={20} className="text-blue-400" /> Telemetry Comparison Studio
             </h2>
             <p className="text-xs text-zinc-400">
               Diff and analyze results, duration deltas, and log diagnostics across test pipelines side-by-side.
@@ -278,8 +289,8 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
               onClick={() => handlePreset('reg')}
               className={`px-2.5 py-1 text-xs font-semibold rounded border transition-all ${
                 runAId === 'RUN-8491-BZ' && runBId === 'RUN-8492-AX'
-                  ? 'bg-[#4daeff]/10 text-[#4daeff] border-[#4daeff]/30'
-                  : 'bg-[#181818] text-zinc-300 border-[#2b2b2b] hover:bg-[#202020]'
+                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                  : 'bg-zinc-900 text-zinc-300 border-zinc-800 hover:bg-zinc-800'
               }`}
             >
               Regression Analysis
@@ -289,8 +300,8 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
               onClick={() => handlePreset('sec')}
               className={`px-2.5 py-1 text-xs font-semibold rounded border transition-all ${
                 runAId === 'RUN-9479-sec' && runBId === 'RUN-9482-sec'
-                  ? 'bg-[#4daeff]/10 text-[#4daeff] border-[#4daeff]/30'
-                  : 'bg-[#181818] text-zinc-300 border-[#2b2b2b] hover:bg-[#202020]'
+                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                  : 'bg-zinc-900 text-zinc-300 border-zinc-800 hover:bg-zinc-800'
               }`}
             >
               Security Audits
@@ -300,8 +311,8 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
               onClick={() => handlePreset('smoke')}
               className={`px-2.5 py-1 text-xs font-semibold rounded border transition-all ${
                 runAId === 'RUN-9479-sec' && runBId === 'RUN-9480-smk'
-                  ? 'bg-[#4daeff]/10 text-[#4daeff] border-[#4daeff]/30'
-                  : 'bg-[#181818] text-zinc-300 border-[#2b2b2b] hover:bg-[#202020]'
+                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                  : 'bg-zinc-900 text-zinc-300 border-zinc-800 hover:bg-zinc-800'
               }`}
             >
               Smoke vs UAT
@@ -314,7 +325,7 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
           {/* RUN A */}
           <div className="flex flex-col gap-1.5" id="run-a-select-block">
             <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 font-bold flex items-center gap-1">
-              <span className="inline-block w-2 h-2 rounded-full bg-[#4daeff]"></span>
+              <span className="inline-block w-2 h-2 rounded-full bg-blue-500"></span>
               Primary Baseline (Run A)
             </label>
             <div className="relative">
@@ -322,7 +333,7 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
                 id="select-run-a"
                 value={runAId}
                 onChange={(e) => { setRunAId(e.target.value); setExpandedTestId(null); }}
-                className="w-full bg-[#181818] border border-[#2b2b2b] rounded px-3 py-2 text-sm text-zinc-200 outline-none focus:border-[#4daeff]/50 transition-colors appearance-none cursor-pointer"
+                className="w-full bg-zinc-900 border border-zinc-800 rounded px-3 py-2 text-sm text-zinc-200 outline-none focus:border-blue-500/50 transition-colors appearance-none cursor-pointer"
               >
                 {runs.map(run => (
                   <option key={run.id} value={run.id} disabled={run.id === runBId}>
@@ -345,7 +356,7 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
                 id="select-run-b"
                 value={runBId}
                 onChange={(e) => { setRunBId(e.target.value); setExpandedTestId(null); }}
-                className="w-full bg-[#181818] border border-[#2b2b2b] rounded px-3 py-2 text-sm text-zinc-200 outline-none focus:border-emerald-500/50 transition-colors appearance-none cursor-pointer"
+                className="w-full bg-zinc-900 border border-zinc-800 rounded px-3 py-2 text-sm text-zinc-200 outline-none focus:border-emerald-500/50 transition-colors appearance-none cursor-pointer"
               >
                 {runs.map(run => (
                   <option key={run.id} value={run.id} disabled={run.id === runAId}>
@@ -364,10 +375,10 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
         {/* Bento Grid Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3" id="bento-comparison-metrics">
           {/* Card 1: Pass Rate Comparison */}
-          <div className="bg-[#121212] border border-[#262626] rounded-lg p-3 flex flex-col justify-between hover:border-zinc-700 transition-all duration-200">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 flex flex-col justify-between hover:border-zinc-700 transition-all duration-200">
             <div className="flex justify-between items-start">
               <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 font-semibold">Pass Rate Change</span>
-              <Gauge size={16} className="text-[#4daeff]" />
+              <Gauge size={16} className="text-blue-400" />
             </div>
             
             <div className="mt-4 flex items-end gap-3">
@@ -378,15 +389,15 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
               <ArrowRight size={14} className="text-zinc-600 mb-1" />
               <div className="flex flex-col">
                 <span className="text-[10px] text-zinc-500 font-mono">Run B</span>
-                <span className={`text-2xl font-black ${runB.passRate >= runA.passRate ? 'text-[#4caf50]' : 'text-red-400'}`}>
+                <span className={`text-2xl font-black ${runB.passRate >= runA.passRate ? 'text-green-500' : 'text-red-400'}`}>
                   {runB.passRate}%
                 </span>
               </div>
             </div>
 
-            <div className="mt-3 pt-2 border-t border-[#1f1f1f] flex items-center justify-between">
+            <div className="mt-3 pt-2 border-t border-zinc-800 flex items-center justify-between">
               <span className="text-[10px] text-zinc-500">Delta Variance</span>
-              <span className={`text-xs font-mono font-bold flex items-center ${passRateDiff >= 0 ? 'text-[#4caf50]' : 'text-red-400'}`}>
+              <span className={`text-xs font-mono font-bold flex items-center ${passRateDiff >= 0 ? 'text-green-500' : 'text-red-400'}`}>
                 {passRateDiff >= 0 ? '+' : ''}{passRateDiff.toFixed(1)}% 
                 {passRateDiff >= 0 ? <TrendingUp size={12} className="ml-0.5" /> : <TrendingDown size={12} className="ml-0.5" />}
               </span>
@@ -394,10 +405,10 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
           </div>
 
           {/* Card 2: Duration Comparison */}
-          <div className="bg-[#121212] border border-[#262626] rounded-lg p-3 flex flex-col justify-between hover:border-zinc-700 transition-all duration-200">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 flex flex-col justify-between hover:border-zinc-700 transition-all duration-200">
             <div className="flex justify-between items-start">
               <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 font-semibold">Duration Shift</span>
-              <Clock size={16} className="text-[#4daeff]" />
+              <Clock size={16} className="text-blue-400" />
             </div>
 
             <div className="mt-4 flex items-end gap-3">
@@ -408,22 +419,22 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
               <ArrowRight size={14} className="text-zinc-600 mb-1" />
               <div className="flex flex-col">
                 <span className="text-[10px] text-zinc-500 font-mono">Run B</span>
-                <span className={`text-2xl font-black ${durationDiffSeconds <= 0 ? 'text-[#4caf50]' : 'text-amber-400'}`}>
+                <span className={`text-2xl font-black ${durationDiffSeconds <= 0 ? 'text-green-500' : 'text-amber-400'}`}>
                   {runB.duration}
                 </span>
               </div>
             </div>
 
-            <div className="mt-3 pt-2 border-t border-[#1f1f1f] flex items-center justify-between">
+            <div className="mt-3 pt-2 border-t border-zinc-800 flex items-center justify-between">
               <span className="text-[10px] text-zinc-500">Execution Delta</span>
-              <span className={`text-xs font-mono font-semibold ${durationDiffSeconds <= 0 ? 'text-[#4caf50]' : 'text-amber-400'}`}>
+              <span className={`text-xs font-mono font-semibold ${durationDiffSeconds <= 0 ? 'text-green-500' : 'text-amber-400'}`}>
                 {formatDurationDiff(durationDiffSeconds)}
               </span>
             </div>
           </div>
 
           {/* Card 3: Test Count & Volumes */}
-          <div className="bg-[#121212] border border-[#262626] rounded-lg p-3 flex flex-col justify-between hover:border-zinc-700 transition-all duration-200">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 flex flex-col justify-between hover:border-zinc-700 transition-all duration-200">
             <div className="flex justify-between items-start">
               <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 font-semibold">Test Scale Diff</span>
               <Layers size={16} className="text-emerald-400" />
@@ -441,7 +452,7 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
               </div>
             </div>
 
-            <div className="mt-3 pt-2 border-t border-[#1f1f1f] flex items-center justify-between">
+            <div className="mt-3 pt-2 border-t border-zinc-800 flex items-center justify-between">
               <span className="text-[10px] text-zinc-500">Total Volume Delta</span>
               <span className="text-xs font-mono font-bold text-zinc-300">
                 {runB.testsCount - runA.testsCount >= 0 ? '+' : ''}{runB.testsCount - runA.testsCount} tests
@@ -450,28 +461,28 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
           </div>
 
           {/* Card 4: Diagnostics Summary */}
-          <div className="bg-[#121212] border border-[#262626] rounded-lg p-3 flex flex-col justify-between hover:border-zinc-700 transition-all duration-200">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 flex flex-col justify-between hover:border-zinc-700 transition-all duration-200">
             <div className="flex justify-between items-start">
               <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 font-semibold">Status Anomalies</span>
               <Flame size={16} className="text-red-400" />
             </div>
 
-            <div className="mt-3 grid grid-cols-2 gap-2 text-center bg-[#171717] p-2 rounded border border-[#222]">
+            <div className="mt-3 grid grid-cols-2 gap-2 text-center bg-zinc-900 p-2 rounded border border-zinc-800">
               <div>
                 <div className="text-[10px] text-zinc-500 font-mono">Regressions</div>
                 <div className={`text-lg font-black ${stats.regressionsCount > 0 ? 'text-red-400' : 'text-zinc-400'}`}>
                   {stats.regressionsCount}
                 </div>
               </div>
-              <div className="border-l border-[#262626]">
+              <div className="border-l border-zinc-800">
                 <div className="text-[10px] text-zinc-500 font-mono">Fixed Tests</div>
-                <div className={`text-lg font-black ${stats.fixesCount > 0 ? 'text-[#4caf50]' : 'text-zinc-400'}`}>
+                <div className={`text-lg font-black ${stats.fixesCount > 0 ? 'text-green-500' : 'text-zinc-400'}`}>
                   {stats.fixesCount}
                 </div>
               </div>
             </div>
 
-            <div className="mt-2.5 pt-1.5 border-t border-[#1f1f1f] flex items-center justify-between">
+            <div className="mt-2.5 pt-1.5 border-t border-zinc-800 flex items-center justify-between">
               <span className="text-[10px] text-zinc-500">Perf Degradations</span>
               <span className={`text-xs font-mono font-semibold ${stats.perfDegradedCount > 0 ? 'text-amber-400' : 'text-zinc-500'}`}>
                 {stats.perfDegradedCount} tests slow
@@ -483,11 +494,11 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
         {/* Side-by-side run metadata cards */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4" id="metadata-comparison-details">
           {/* Baseline metadata */}
-          <div className="bg-[#101010] border border-[#262626] rounded-lg p-3 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1.5 h-full bg-[#4daeff]"></div>
+          <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-3 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
             <div className="flex justify-between items-center mb-3">
               <h3 className="text-xs font-mono uppercase tracking-wider font-bold text-zinc-300">Primary Baseline Run Profile</h3>
-              <span className="font-mono text-[10px] text-[#4daeff] bg-[#4daeff]/10 px-2 py-0.5 rounded border border-[#4daeff]/20">{runA.id}</span>
+              <span className="font-mono text-[10px] text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">{runA.id}</span>
             </div>
             
             <div className="grid grid-cols-2 gap-y-3 gap-x-6 text-sm">
@@ -521,10 +532,10 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
               </div>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-[#1e1e1e] flex justify-between text-xs font-mono">
+            <div className="mt-4 pt-3 border-t border-zinc-800 flex justify-between text-xs font-mono">
               <span className="text-zinc-500">Execution Breakdown:</span>
               <span className="text-zinc-300">
-                Passed: <strong className="text-[#4caf50]">{runA.passedCount}</strong> | 
+                Passed: <strong className="text-green-500">{runA.passedCount}</strong> | 
                 Failed: <strong className="text-red-400">{runA.failedCount}</strong> | 
                 Skipped: <strong className="text-zinc-500">{runA.skippedCount}</strong>
               </span>
@@ -532,7 +543,7 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
           </div>
 
           {/* Target metadata */}
-          <div className="bg-[#101010] border border-[#262626] rounded-lg p-3 relative overflow-hidden">
+          <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-3 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-500"></div>
             <div className="flex justify-between items-center mb-3">
               <h3 className="text-xs font-mono uppercase tracking-wider font-bold text-zinc-300">Comparison Target Run Profile</h3>
@@ -570,10 +581,10 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
               </div>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-[#1e1e1e] flex justify-between text-xs font-mono">
+            <div className="mt-4 pt-3 border-t border-zinc-800 flex justify-between text-xs font-mono">
               <span className="text-zinc-500">Execution Breakdown:</span>
               <span className="text-zinc-300">
-                Passed: <strong className="text-[#4caf50]">{runB.passedCount}</strong> | 
+                Passed: <strong className="text-green-500">{runB.passedCount}</strong> | 
                 Failed: <strong className="text-red-400">{runB.failedCount}</strong> | 
                 Skipped: <strong className="text-zinc-500">{runB.skippedCount}</strong>
               </span>
@@ -582,8 +593,8 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
         </div>
 
         {/* Test Matrix Diff Table */}
-        <div className="bg-[#101010] border border-[#262626] rounded-lg flex flex-col overflow-hidden" id="compared-tests-matrix-container">
-          <div className="p-4 border-b border-[#262626] flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#141414]">
+        <div className="bg-zinc-950 border border-zinc-800 rounded-lg flex flex-col overflow-hidden" id="compared-tests-matrix-container">
+          <div className="p-4 border-b border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-zinc-900">
             <div className="flex flex-col">
               <h3 className="text-xs font-mono uppercase tracking-wider font-bold text-zinc-300">Test Cases Status Matrix Diff</h3>
               <p className="text-[11px] text-zinc-500">Analyzing matching test executions and tracking state mutations.</p>
@@ -592,10 +603,10 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
             {/* Filters & Search Row */}
             <div className="flex flex-wrap items-center gap-3">
               {/* Filter Tabs */}
-              <div className="flex bg-[#1c1c1c] p-0.5 rounded border border-[#2b2b2b] text-xs font-medium">
+              <div className="flex bg-zinc-900 p-0.5 rounded border border-zinc-800 text-xs font-medium">
                 <button 
                   onClick={() => { setActiveFilter('all'); setExpandedTestId(null); }}
-                  className={`px-2.5 py-1 rounded transition-colors ${activeFilter === 'all' ? 'bg-[#2a2a2a] text-[#4daeff] font-bold' : 'text-zinc-400 hover:text-white'}`}
+                  className={`px-2.5 py-1 rounded transition-colors ${activeFilter === 'all' ? 'bg-zinc-800 text-blue-400 font-bold' : 'text-zinc-400 hover:text-white'}`}
                 >
                   All ({comparedTests.filter(t => t.activeInEither).length})
                 </button>
@@ -607,7 +618,7 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
                 </button>
                 <button 
                   onClick={() => { setActiveFilter('fixes'); setExpandedTestId(null); }}
-                  className={`px-2.5 py-1 rounded transition-colors flex items-center gap-1 ${activeFilter === 'fixes' ? 'bg-emerald-950/50 text-[#4caf50] font-bold' : 'text-zinc-400 hover:text-white'}`}
+                  className={`px-2.5 py-1 rounded transition-colors flex items-center gap-1 ${activeFilter === 'fixes' ? 'bg-emerald-950/50 text-green-500 font-bold' : 'text-zinc-400 hover:text-white'}`}
                 >
                   Fixes ({stats.fixesCount})
                 </button>
@@ -627,7 +638,7 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
                   placeholder="Search comparison tests..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-[#1c1c1c] border border-[#2b2b2b] rounded pl-8 pr-3 py-1 text-xs text-zinc-300 outline-none focus:border-zinc-600 transition-colors placeholder:text-zinc-600 w-44"
+                  className="bg-zinc-900 border border-zinc-800 rounded pl-8 pr-3 py-1 text-xs text-zinc-300 outline-none focus:border-zinc-600 transition-colors placeholder:text-zinc-600 w-44"
                 />
               </div>
             </div>
@@ -638,10 +649,10 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
               No matching test cases found with current filters or search queries.
             </div>
           ) : (
-            <div className="divide-y divide-[#202020] overflow-x-auto">
+            <div className="divide-y divide-zinc-800 overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[700px]">
                 <thead>
-                  <tr className="bg-[#131313] border-b border-[#202020] text-zinc-400 font-mono text-[10px] uppercase tracking-widest font-bold">
+                  <tr className="bg-zinc-900 border-b border-zinc-800 text-zinc-400 font-mono text-[10px] uppercase tracking-widest font-bold">
                     <th className="p-3">Test Name & Location</th>
                     <th className="p-3">Run A Status</th>
                     <th className="p-3">Run B Status</th>
@@ -650,7 +661,7 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
                     <th className="p-3 text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="text-xs divide-y divide-[#1b1b1b]">
+                <tbody className="text-xs divide-y divide-zinc-800">
                   {comparedTests.map((item) => {
                     const { testCase, detailsA, detailsB, isRegression, isFix, durPercentChange } = item;
                     const isExpanded = expandedTestId === testCase.id;
@@ -660,9 +671,9 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
                         <tr 
                           id={`row-${testCase.id}`}
                           onClick={() => setExpandedTestId(isExpanded ? null : testCase.id)}
-                          className={`hover:bg-[#151515] transition-colors cursor-pointer ${
+                          className={`hover:bg-zinc-900 transition-colors cursor-pointer ${
                             isRegression ? 'bg-red-500/5 hover:bg-red-500/10' : 
-                            isFix ? 'bg-[#4caf50]/5 hover:bg-[#4caf50]/10' : ''
+                            isFix ? 'bg-green-500/5 hover:bg-green-500/10' : ''
                           }`}
                         >
                           {/* Test name & location */}
@@ -699,7 +710,7 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
                                   Regression <TrendingDown size={10} />
                                 </span>
                               ) : isFix ? (
-                                <span className="px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-500/30 text-[#4caf50] font-mono font-bold text-[9px] uppercase tracking-wider flex items-center gap-1">
+                                <span className="px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-500/30 text-green-500 font-mono font-bold text-[9px] uppercase tracking-wider flex items-center gap-1">
                                   Resolved <TrendingUp size={10} />
                                 </span>
                               ) : detailsA.status === detailsB.status ? (
@@ -731,7 +742,7 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
                           {/* Action toggle details button */}
                           <td className="p-3 text-right">
                             <button 
-                              className="p-1 rounded text-zinc-500 hover:text-zinc-200 hover:bg-[#202020] transition-colors"
+                              className="p-1 rounded text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setExpandedTestId(isExpanded ? null : testCase.id);
@@ -744,12 +755,12 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
 
                         {/* Expandable Side-by-Side Test Diff Row */}
                         {isExpanded && (
-                          <tr id={`expanded-info-${testCase.id}`} className="bg-[#131313]">
-                            <td colSpan={6} className="p-4 border-t border-[#222]">
+                          <tr id={`expanded-info-${testCase.id}`} className="bg-zinc-900">
+                            <td colSpan={6} className="p-4 border-t border-zinc-800">
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                 {/* Error diagnostic in A */}
-                                <div className="bg-[#0b0b0b] border border-[#222] rounded p-3 text-xs">
-                                  <div className="flex items-center justify-between border-b border-[#1b1b1b] pb-2 mb-2 font-mono text-[10px] uppercase text-zinc-500">
+                                <div className="bg-zinc-950 border border-zinc-800 rounded p-3 text-xs">
+                                  <div className="flex items-center justify-between border-b border-zinc-800 pb-2 mb-2 font-mono text-[10px] uppercase text-zinc-500">
                                     <span>Run A Diagnostic Log ({runAId})</span>
                                     {getStatusBadge(detailsA.status)}
                                   </div>
@@ -768,15 +779,15 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
                                       This test was not executed in the baseline run.
                                     </div>
                                   ) : (
-                                    <div className="text-[#4caf50] font-mono py-4 text-center flex items-center justify-center gap-1.5 bg-[#4caf50]/5 rounded border border-[#4caf50]/10">
+                                    <div className="text-green-500 font-mono py-4 text-center flex items-center justify-center gap-1.5 bg-green-500/5 rounded border border-green-500/10">
                                       <CheckCircle size={14} /> Passed cleanly in {detailsA.duration}
                                     </div>
                                   )}
                                 </div>
 
                                 {/* Error diagnostic in B */}
-                                <div className="bg-[#0b0b0b] border border-[#222] rounded p-3 text-xs">
-                                  <div className="flex items-center justify-between border-b border-[#1b1b1b] pb-2 mb-2 font-mono text-[10px] uppercase text-zinc-500">
+                                <div className="bg-zinc-950 border border-zinc-800 rounded p-3 text-xs">
+                                  <div className="flex items-center justify-between border-b border-zinc-800 pb-2 mb-2 font-mono text-[10px] uppercase text-zinc-500">
                                     <span>Run B Diagnostic Log ({runBId})</span>
                                     {getStatusBadge(detailsB.status)}
                                   </div>
@@ -814,7 +825,7 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
                                       This test was not executed in the target comparison run.
                                     </div>
                                   ) : (
-                                    <div className="text-[#4caf50] font-mono py-4 text-center flex items-center justify-center gap-1.5 bg-[#4caf50]/5 rounded border border-[#4caf50]/10">
+                                    <div className="text-green-500 font-mono py-4 text-center flex items-center justify-center gap-1.5 bg-green-500/5 rounded border border-green-500/10">
                                       <CheckCircle size={14} /> Passed cleanly in {detailsB.duration}
                                     </div>
                                   )}
@@ -822,14 +833,14 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
                               </div>
 
                               {/* External deep link */}
-                              <div className="mt-3 flex justify-between items-center text-[11px] font-mono text-zinc-500 bg-[#191919] p-2 rounded border border-[#222]">
+                              <div className="mt-3 flex justify-between items-center text-[11px] font-mono text-zinc-500 bg-[#191919] p-2 rounded border border-zinc-800">
                                 <span className="flex items-center gap-1.5">
                                   <Terminal size={12} className="text-zinc-400" /> Suite ID: <strong>{testCase.suiteId}</strong> | Priority: <strong>{testCase.priority}</strong>
                                 </span>
                                 {onSelectTest && (
                                   <button 
-                                    onClick={() => onSelectTest(testCase.id)}
-                                    className="text-[#4daeff] hover:underline flex items-center gap-1 font-bold"
+                                    onClick={() => setModalTestCaseId(testCase.id)}
+                                    className="text-blue-400 hover:underline flex items-center gap-1 font-bold"
                                   >
                                     View full test history <ExternalLink size={10} />
                                   </button>
@@ -847,6 +858,14 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
           )}
         </div>
       </div>
+      {modalTestCaseId && (
+        <TestCaseModal 
+          testCases={allTestCases} 
+          initialTestId={modalTestCaseId} 
+          onClose={() => setModalTestCaseId(null)} 
+          onShowToast={onShowToast}
+        />
+      )}
     </div>
   );
 }

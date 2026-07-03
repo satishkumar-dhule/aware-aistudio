@@ -1,67 +1,26 @@
-name: Scheduled Real Tests
-
+name: Scheduled Fan-Out
 on:
   schedule:
     - cron: '0 * * * *'
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pages: write
-  id-token: write
+  actions: write
+  contents: read
 
 jobs:
-  test-and-deploy:
+  trigger-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          
-      - name: Install dependencies
+      - name: Fan-out test execution using GitHub CLI
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm ci
-          npm i -D @playwright/test
-          npx playwright install chromium
-          
-      - name: Run tests for QA
-        run: |
-          TEST_ENV=QA npx playwright test tests/website.spec.ts || true
-          TEST_ENV=QA node scripts/process_report.cjs
-          
-      - name: Run tests for UAT
-        run: |
-          TEST_ENV=UAT npx playwright test tests/website.spec.ts || true
-          TEST_ENV=UAT node scripts/process_report.cjs
-          
-      - name: Run tests for Prod
-        run: |
-          TEST_ENV=Prod npx playwright test tests/website.spec.ts || true
-          TEST_ENV=Prod node scripts/process_report.cjs
-          
-      - name: Commit real telemetry
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add public/telemetry_data.json
-          git commit -m "chore: auto-update telemetry data from real tests [skip ci]" || echo "No changes"
-          git push || echo "Push failed"
-          
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-        with:
-          enablement: true
-        
-      - name: Build Dashboard
-        run: npx vite build --base=/aware-aistudio/
-        
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: './dist'
-          
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          echo "Triggering QA environment tests..."
+          gh workflow run "Execute Tests" -f environment=QA
+          echo "Triggering UAT environment tests..."
+          gh workflow run "Execute Tests" -f environment=UAT
+          echo "Triggering Prod environment tests..."
+          gh workflow run "Execute Tests" -f environment=Prod

@@ -1,3 +1,5 @@
+import initSqlJs from 'sql.js';
+import sqlWasmUrl from 'sql.js/dist/sql-wasm.wasm?url';
 import { Run, TestCase, Suite } from '../types';
 import { 
   initialRuns, 
@@ -57,306 +59,116 @@ export class BrowserDb {
   }
 
   // 1.1 Dynamic static file loader for GitHub Pages or distributed builds
-  static async fetchStaticTelemetry(): Promise<{ success: boolean; source: string; message: string; runsCount?: number; testsCount?: number }> {
-    try {
-      const filePath = localStorage.getItem('aware_telemetry_file_path') || './telemetry_data.json';
-      const response = await fetch(filePath, { cache: 'no-cache' });
-      if (!response.ok) {
-        return { 
-          success: false, 
-          source: 'local', 
-          message: `No static telemetry file found at '${filePath}'. Operating in local storage / simulation mode.` 
-        };
-      }
-      
-      const contentType = response.headers.get('content-type');
-      if (contentType && (contentType.includes('text/html') || contentType.includes('application/xhtml+xml'))) {
-        return { 
-          success: false, 
-          source: 'local', 
-          message: `File loaded from '${filePath}' is not valid telemetry data (HTML found instead of JSON). Operating in local storage / simulation mode.` 
-        };
-      }
-
-      const text = await response.text();
-      const trimmedText = text.trim();
-      if (trimmedText.startsWith('<') || trimmedText.toLowerCase().startsWith('<!doctype')) {
-        return { 
-          success: false, 
-          source: 'local', 
-          message: `File loaded from '${filePath}' is not valid telemetry data (XML/HTML found instead of JSON). Operating in local storage / simulation mode.` 
-        };
-      }
-
-      const res = this.importDatabaseBackup(text);
-      if (res.success) {
-        return { 
-          success: true, 
-          source: 'github-pages-sync', 
-          message: `Statically synced successfully from '${filePath}'! Loaded ${res.importedCount?.runs || 0} runs and ${res.importedCount?.tests || 0} test cases.`,
-          runsCount: res.importedCount?.runs,
-          testsCount: res.importedCount?.tests
-        };
-      } else {
-        return { 
-          success: false, 
-          source: 'error', 
-          message: `Static file found at '${filePath}' but failed contract validation: ${res.message}` 
-        };
-      }
-    } catch (e: any) {
-      const filePath = localStorage.getItem('aware_telemetry_file_path') || './telemetry_data.json';
-      return { 
-        success: false, 
-        source: 'error', 
-        message: `Connection failed during static database synchronization from '${filePath}': ${e.message}` 
-      };
-    }
-  }
-
-  // 2. Strict Type Schema Guards with Automatic Repair (Self-healing mechanism)
-  static validateRun(r: any): Run | null {
-    if (!r || typeof r !== 'object' || !r.id) return null;
-    return {
-      id: String(r.id),
-      name: String(r.name || `Run ${r.id}`),
-      branch: String(r.branch || 'main'),
-      status: (r.status === 'Passed' || r.status === 'Failed' || r.status === 'Flaky' || r.status === 'Running') ? r.status : 'Passed',
-      environment: (r.environment === 'Prod' || r.environment === 'UAT' || r.environment === 'QA') ? r.environment : 'QA',
-      duration: String(r.duration || '0s'),
-      timestamp: String(r.timestamp || 'Unknown time'),
-      passRate: typeof r.passRate === 'number' ? r.passRate : 100,
-      triggeredBy: String(r.triggeredBy || 'System'),
-      commit: String(r.commit || 'unknown'),
-      testsCount: typeof r.testsCount === 'number' ? r.testsCount : 0,
-      passedCount: typeof r.passedCount === 'number' ? r.passedCount : 0,
-      skippedCount: typeof r.skippedCount === 'number' ? r.skippedCount : 0,
-      failedCount: typeof r.failedCount === 'number' ? r.failedCount : 0,
-      suite: (r.suite === 'Smoke' || r.suite === 'Security' || r.suite === 'Regression' || r.suite === 'Performance') ? r.suite : 'Smoke',
-      hasMemoryAnomaly: !!r.hasMemoryAnomaly
-    };
-  }
-
-  static validateTestCase(tc: any): TestCase | null {
-    if (!tc || typeof tc !== 'object' || !tc.id) return null;
-    return {
-      id: String(tc.id),
-      name: String(tc.name || `Test ${tc.id}`),
-      suiteId: String(tc.suiteId || 'unknown'),
-      runId: String(tc.runId || 'unknown'),
-      folder: String(tc.folder || 'test/'),
-      status: (tc.status === 'Passed' || tc.status === 'Failed' || tc.status === 'Flaky' || tc.status === 'Skipped') ? tc.status : 'Passed',
-      duration: String(tc.duration || '0ms'),
-      tag: String(tc.tag || 'general'),
-      priority: (tc.priority === 'P0 - Critical' || tc.priority === 'P1 - High' || tc.priority === 'P2 - Medium') ? tc.priority : 'P1 - High',
-      errorMsg: tc.errorMsg ? String(tc.errorMsg) : undefined,
-      stackTrace: tc.stackTrace ? String(tc.stackTrace) : undefined,
-      diff: tc.diff ? { expected: String(tc.diff.expected || ''), actual: String(tc.diff.actual || '') } : undefined,
-      history: Array.isArray(tc.history) ? tc.history.map((h: any) => ({
-        runId: String(h.runId),
-        status: (h.status === 'Passed' || h.status === 'Failed' || h.status === 'Flaky') ? h.status : 'Passed',
-        duration: String(h.duration || '0ms'),
-        timestamp: String(h.timestamp || 'Just now')
-      })) : undefined
-    };
-  }
-
-  static validateSuite(s: any): Suite | null {
-    if (!s || typeof s !== 'object' || !s.id) return null;
-    return {
-      id: String(s.id),
-      name: String(s.name || `Suite ${s.id}`),
-      totalTests: typeof s.totalTests === 'number' ? s.totalTests : 0,
-      duration: String(s.duration || '0s'),
-      stability30d: typeof s.stability30d === 'number' ? s.stability30d : 100,
-      environment: (s.environment === 'Production' || s.environment === 'Staging' || s.environment === 'UAT' || s.environment === 'QA') ? s.environment : 'QA',
-      category: (s.category === 'Smoke' || s.category === 'Regression' || s.category === 'Security') ? s.category : 'Smoke',
-      heatmapHistory: Array.isArray(s.heatmapHistory) ? s.heatmapHistory.map((item: any) => 
-        (item === 'Passed' || item === 'Failed' || item === 'Flaky' || item === 'Skipped') ? item : 'Passed'
-      ) : ['Passed']
-    };
-  }
-
-  // 3. Optimized Getters with Fallback Strategy & Schema Recovery
+  
   static getRuns(): Run[] {
     if (cachedRuns) return cachedRuns;
     try {
-      const stored = localStorage.getItem(RUNS_KEY);
-      if (!stored) return initialRuns;
-      
-      const list: any[] = JSON.parse(stored);
-      const seen = new Set<string>();
-      const validated: Run[] = [];
-      
-      for (const item of list) {
-        const validatedRun = this.validateRun(item);
-        if (validatedRun && !seen.has(validatedRun.id)) {
-          seen.add(validatedRun.id);
-          validated.push(validatedRun);
-        }
-      }
-      
-      cachedRuns = validated;
-      return validated;
-    } catch (e) {
-      console.warn("Corrupted Runs DB state parsed. Regenerating safe defaults.", e);
-      cachedRuns = [...initialRuns];
+      const data = localStorage.getItem(RUNS_KEY);
+      cachedRuns = data ? JSON.parse(data) : [];
       return cachedRuns;
+    } catch {
+      return [];
     }
   }
 
   static saveRuns(runs: Run[]) {
-    // Keep only the last 50 runs to auto-purge older ones and prevent storage overflow
-    let safeList = [...runs];
-    if (safeList.length > 50) {
-      safeList = safeList.slice(0, 50);
-    }
-    
-    const seen = new Set<string>();
-    const uniqueList: Run[] = [];
-    
-    for (const r of safeList) {
-      const validated = this.validateRun(r);
-      if (validated && !seen.has(validated.id)) {
-        seen.add(validated.id);
-        uniqueList.push(validated);
-      }
-    }
-    
-    cachedRuns = uniqueList;
-    this.saveRunsRaw(uniqueList);
+    cachedRuns = runs;
+    localStorage.setItem(RUNS_KEY, JSON.stringify(runs));
+    window.dispatchEvent(new Event('aware_db_update'));
   }
 
-  private static saveRunsRaw(runs: Run[]) {
-    try {
-      localStorage.setItem(RUNS_KEY, JSON.stringify(runs));
-      window.dispatchEvent(new Event('aware_db_update'));
-    } catch (err) {
-      console.error("Critical: Failed to save runs to localStorage.", err);
-    }
+  static saveRunsRaw(runs: any[]) {
+    this.saveRuns(runs);
   }
 
   static getTestCases(): TestCase[] {
     if (cachedTestCases) return cachedTestCases;
     try {
-      const stored = localStorage.getItem(TEST_CASES_KEY);
-      if (!stored) return initialTestCases;
-      
-      const list: any[] = JSON.parse(stored);
-      const seen = new Set<string>();
-      const validated: TestCase[] = [];
-      
-      for (const item of list) {
-        const validatedTC = this.validateTestCase(item);
-        if (validatedTC && !seen.has(validatedTC.id)) {
-          seen.add(validatedTC.id);
-          validated.push(validatedTC);
-        }
-      }
-      
-      cachedTestCases = validated;
-      return validated;
-    } catch (e) {
-      console.warn("Corrupted TestCases DB state parsed. Fallback safe defaults.", e);
-      cachedTestCases = [...initialTestCases];
+      const data = localStorage.getItem(TEST_CASES_KEY);
+      cachedTestCases = data ? JSON.parse(data) : [];
       return cachedTestCases;
+    } catch {
+      return [];
     }
   }
 
-  static saveTestCases(testCases: TestCase[]) {
-    // Keep up to 10000 test cases for full suite runs
-    let safeList = [...testCases];
-    if (safeList.length > 10000) {
-      safeList = safeList.slice(0, 10000);
-    }
-    
-    const seen = new Set<string>();
-    const uniqueList: TestCase[] = [];
-    
-    for (const tc of safeList) {
-      const validated = this.validateTestCase(tc);
-      if (validated && !seen.has(validated.id)) {
-        seen.add(validated.id);
-        uniqueList.push(validated);
-      }
-    }
-    
-    cachedTestCases = uniqueList;
-    this.saveTestCasesRaw(uniqueList);
+  static saveTestCases(tcs: TestCase[]) {
+    cachedTestCases = tcs;
+    localStorage.setItem(TEST_CASES_KEY, JSON.stringify(tcs));
+    window.dispatchEvent(new Event('aware_db_update'));
   }
-
-  private static saveTestCasesRaw(testCases: TestCase[]) {
-    try {
-      localStorage.setItem(TEST_CASES_KEY, JSON.stringify(testCases));
-      window.dispatchEvent(new Event('aware_db_update'));
-    } catch (err) {
-      console.error("Critical: Failed to save test cases.", err);
-    }
+  
+  static saveTestCasesRaw(tcs: any[]) {
+    this.saveTestCases(tcs);
   }
 
   static getSuites(): Suite[] {
     if (cachedSuites) return cachedSuites;
     try {
-      const stored = localStorage.getItem(SUITES_KEY);
-      if (!stored) return initialSuites;
-      
-      const list: any[] = JSON.parse(stored);
-      const validated: Suite[] = [];
-      for (const item of list) {
-        const val = this.validateSuite(item);
-        if (val) validated.push(val);
-      }
-      cachedSuites = validated;
-      return validated;
-    } catch {
-      cachedSuites = [...initialSuites];
+      const data = localStorage.getItem(SUITES_KEY);
+      cachedSuites = data ? JSON.parse(data) : [];
       return cachedSuites;
+    } catch {
+      return [];
     }
   }
 
   static saveSuites(suites: Suite[]) {
     cachedSuites = suites;
-    this.saveSuitesRaw(suites);
+    localStorage.setItem(SUITES_KEY, JSON.stringify(suites));
+    window.dispatchEvent(new Event('aware_db_update'));
   }
 
-  private static saveSuitesRaw(suites: Suite[]) {
-    try {
-      localStorage.setItem(SUITES_KEY, JSON.stringify(suites));
-      window.dispatchEvent(new Event('aware_db_update'));
-    } catch (err) {
-      console.error("Critical: Failed to save suites.", err);
-    }
+  static saveSuitesRaw(suites: any[]) {
+    this.saveSuites(suites);
   }
 
-  static getAnomalies(): typeof activeAnomalies {
+  static getAnomalies(): any[] {
     if (cachedAnomalies) return cachedAnomalies;
     try {
-      const stored = localStorage.getItem(ANOMALIES_KEY);
-      if (!stored) return activeAnomalies;
-      cachedAnomalies = JSON.parse(stored);
-      return cachedAnomalies || activeAnomalies;
-    } catch {
-      cachedAnomalies = [...activeAnomalies];
+      const data = localStorage.getItem(ANOMALIES_KEY);
+      cachedAnomalies = data ? JSON.parse(data) : [];
       return cachedAnomalies;
+    } catch {
+      return [];
     }
   }
 
-  static saveAnomalies(anomalies: typeof activeAnomalies) {
-    cachedAnomalies = anomalies;
-    this.saveAnomaliesRaw(anomalies);
+  static saveAnomalies(anomalies: any[]) {
+    cachedAnomalies = anomalies as any;
+    localStorage.setItem(ANOMALIES_KEY, JSON.stringify(anomalies));
+    window.dispatchEvent(new Event('aware_db_update'));
   }
 
-  private static saveAnomaliesRaw(anomalies: typeof activeAnomalies) {
-    try {
-      localStorage.setItem(ANOMALIES_KEY, JSON.stringify(anomalies));
-      window.dispatchEvent(new Event('aware_db_update'));
-    } catch (err) {
-      console.error("Critical: Failed to save anomalies.", err);
-    }
+  static saveAnomaliesRaw(anomalies: any[]) {
+    this.saveAnomalies(anomalies);
   }
 
-  // 4. Central Reset Engine with Cache Purge
+  static validateRun(item: any): Run | null {
+    if (!item || typeof item !== 'object') return null;
+    if (!item.id || !item.name) return null;
+    return item as Run;
+  }
+  
+  static validateTestCase(item: any): TestCase | null {
+    if (!item || typeof item !== 'object') return null;
+    if (!item.id || !item.name || !item.runId) return null;
+    return item as TestCase;
+  }
+  
+  static validateSuite(item: any): Suite | null {
+    if (!item || typeof item !== 'object') return null;
+    if (!item.id || !item.name) return null;
+    return item as Suite;
+  }
+
+
   static resetDatabase() {
+    localStorage.removeItem('aware_runs');
+    localStorage.removeItem('aware_test_cases');
+    localStorage.removeItem('aware_suites');
+    localStorage.removeItem('aware_anomalies');
+    
     cachedRuns = null;
     cachedTestCases = null;
     cachedSuites = null;
@@ -366,22 +178,95 @@ export class BrowserDb {
     this.saveTestCasesRaw(initialTestCases);
     this.saveSuitesRaw(initialSuites);
     this.saveAnomaliesRaw(activeAnomalies);
+    
+    window.dispatchEvent(new Event('aware_db_update'));
   }
 
-  // 5. Database Backup and Restore Suite (Export/Import JSON)
   static exportDatabaseBackup(): string {
-    const backupObj = {
-      version: "1.2.0-secure",
-      timestamp: new Date().toISOString(),
+    const payload = {
       runs: this.getRuns(),
       testCases: this.getTestCases(),
       suites: this.getSuites(),
       anomalies: this.getAnomalies()
     };
-    return JSON.stringify(backupObj, null, 2);
+    return JSON.stringify(payload, null, 2);
   }
 
-  static importDatabaseBackup(jsonString: string): { success: boolean; message: string; importedCount?: { runs: number; tests: number } } {
+  static async fetchStaticTelemetry(): Promise<{ success: boolean; source: string; message: string; runsCount?: number; testsCount?: number }> {
+    try {
+      const filePath = localStorage.getItem('aware_telemetry_file_path') || './telemetry.sqlite';
+      
+      // Fallback for json if users still have old setting
+      if (filePath.endsWith('.json')) {
+        const response = await fetch(filePath, { cache: 'no-cache' });
+        if (!response.ok) return { success: false, source: 'local', message: 'No file' };
+        const text = await response.text();
+        const res = this.importDatabaseBackup(text);
+        if (res.success) {
+           return { success: true, source: 'sync', message: 'Synced json', runsCount: res.importedCount?.runs, testsCount: res.importedCount?.tests };
+        }
+        return { success: false, source: 'error', message: 'Failed json validation' };
+      }
+
+      // SQLite approach
+      const response = await fetch(filePath, { cache: 'no-cache' });
+      if (!response.ok) {
+        return { 
+           success: false, 
+           source: 'local', 
+           message: `No SQLite telemetry file found at '${filePath}'.` 
+         };
+      }
+      
+      const buffer = await response.arrayBuffer();
+      
+      const SQL = await initSqlJs({ locateFile: file => sqlWasmUrl });
+      const db = new SQL.Database(new Uint8Array(buffer));
+      
+      const resRuns = db.exec("SELECT * FROM runs ORDER BY timestamp DESC");
+      const resSuites = db.exec("SELECT * FROM suites");
+      const resTestCases = db.exec("SELECT * FROM testCases");
+      const resAnomalies = db.exec("SELECT * FROM anomalies");
+      
+      const toArray = (res) => {
+        if (!res || res.length === 0) return [];
+        return res[0].values.map(row => {
+           let obj = {};
+           res[0].columns.forEach((col, i) => {
+             obj[col] = row[i];
+           });
+           return obj;
+        });
+      };
+      
+      const runs = toArray(resRuns);
+      const suites = toArray(resSuites).map(s => ({...s, heatmapHistory: JSON.parse(s.heatmapHistory)}));
+      const testCases = toArray(resTestCases);
+      const anomalies = toArray(resAnomalies);
+      
+      if (runs.length > 0) this.saveRunsRaw(runs);
+      if (suites.length > 0) this.saveSuitesRaw(suites);
+      if (testCases.length > 0) this.saveTestCasesRaw(testCases);
+      if (anomalies.length > 0) this.saveAnomaliesRaw(anomalies);
+      
+      db.close();
+
+      return {
+         success: true,
+         source: 'github-pages-sqlite-sync',
+         message: `SQLite synced successfully from '${filePath}'! Loaded ${runs.length} runs and ${testCases.length} test cases.`,
+         runsCount: runs.length,
+         testsCount: testCases.length
+      };
+
+    } catch (e: any) {
+      return { 
+         success: false, 
+         source: 'error', 
+         message: `Static SQLite sync failed: ${e.message}`
+       };
+    }
+  }static importDatabaseBackup(jsonString: string): { success: boolean; message: string; importedCount?: { runs: number; tests: number } } {
     try {
       const payload = JSON.parse(jsonString);
       if (!payload || typeof payload !== 'object') {
@@ -563,7 +448,7 @@ export class BrowserDb {
         suiteId: 'prd-smk-01',
         runId: id,
         folder: `src/tests/module_${Math.floor(i / 10)}`,
-        status: isFailedTC ? 'Failed' : 'Passed',
+        status: isFailedTC ? 'Failed' as const : 'Passed' as const,
         duration: `${Math.floor(Math.random() * 100)}ms`,
         tag: i % 2 === 0 ? 'api' : 'ui',
         priority: i % 10 === 0 ? 'P0 - Critical' : 'P1 - High',
@@ -620,33 +505,24 @@ export class BrowserDb {
 
       newRunsList.push(newRun);
 
-      // Create specific tests for this environment
-      newTestCasesList.push(
-        {
-          id: `gh_test_api_${env.toLowerCase()}_${runNum}`,
-          name: `api.v1.${env.toLowerCase()}.spec.ts: Gateway Security Health [Sched ${runNum}]`,
-          suiteId: 'prd-smk-01',
+// Create specific tests for this environment
+      const envTests = Array.from({ length: 120 }).map((_, i) => {
+        const isFailedTC = i < newRun.failedCount;
+        return {
+          id: `gh_test_${env.toLowerCase()}_${runNum}_${i}`,
+          name: `module_${Math.floor(i / 10)}.spec.ts: Subtest ${i} [Sched ${runNum}]`,
+          suiteId: suiteName,
           runId: runId,
           folder: `test/gh-workflows/${env.toLowerCase()}`,
-          status: isPassed ? 'Passed' : 'Failed',
-          duration: '1.8s',
-          tag: 'api',
-          priority: 'P0 - Critical',
-          errorMsg: isPassed ? undefined : `AssertionError: Expected 200 OK from ${env} environment gateway, got 504 Gateway Timeout`,
-          stackTrace: isPassed ? undefined : `at test/gh-workflows/api.spec.ts:54\nat processTicksAndRejections\nat github-actions-runner-node`,
-        },
-        {
-          id: `gh_test_e2e_${env.toLowerCase()}_${runNum}`,
-          name: `e2e.flow.${env.toLowerCase()}.spec.ts: User Checkpoint [Sched ${runNum}]`,
-          suiteId: 'prd-smk-01',
-          runId: runId,
-          folder: `test/gh-workflows/${env.toLowerCase()}`,
-          status: 'Passed',
-          duration: '5.2s',
-          tag: 'e2e',
-          priority: 'P1 - High',
-        }
-      );
+          status: isFailedTC ? 'Failed' as const : 'Passed' as const,
+          duration: `${Math.floor(100 + Math.random() * 800)}ms`,
+          tag: i % 3 === 0 ? 'api' : 'e2e',
+          priority: isFailedTC ? 'P1 - High' : 'P2 - Medium',
+          errorMsg: isFailedTC ? `AssertionError: Expected 200 OK from ${env} environment gateway, got 504 Gateway Timeout` : undefined,
+          stackTrace: isFailedTC ? `at test/gh-workflows/api.spec.ts:54\nat processTicksAndRejections\nat github-actions-runner-node` : undefined,
+        };
+      });
+      newTestCasesList.push(...envTests);
     });
 
     const updatedRuns = [...newRunsList, ...runs];
