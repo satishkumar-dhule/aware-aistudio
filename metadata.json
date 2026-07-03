@@ -1,0 +1,8 @@
+{
+  "name": "Remix: AWARE Observability",
+  "description": "High-fidelity, deep technical observability and test automation dashboard with real-time test runs, suite heatmaps, test case details, and interactive analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

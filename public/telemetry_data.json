@@ -1,0 +1,128 @@
+{
+  "version": "1.2.0-secure",
+  "runs": [
+    {
+      "id": "RUN-9911-sec",
+      "name": "Security_Auth_V3_Production",
+      "branch": "main",
+      "status": "Passed",
+      "environment": "Prod",
+      "duration": "14m 20s",
+      "timestamp": "Just now",
+      "passRate": 100,
+      "triggeredBy": "GitHub Actions",
+      "commit": "c4d5e6f",
+      "testsCount": 1500,
+      "passedCount": 1500,
+      "skippedCount": 0,
+      "failedCount": 0,
+      "suite": "Security",
+      "hasMemoryAnomaly": false
+    },
+    {
+      "id": "RUN-9910-reg",
+      "name": "Regression_Checkout_Flow_V1.4",
+      "branch": "release/1.4",
+      "status": "Failed",
+      "environment": "Prod",
+      "duration": "5m 45s",
+      "timestamp": "10 mins ago",
+      "passRate": 94.2,
+      "triggeredBy": "Alex Chen",
+      "commit": "a8b9c0d",
+      "testsCount": 850,
+      "passedCount": 801,
+      "skippedCount": 9,
+      "failedCount": 40,
+      "suite": "Regression",
+      "hasMemoryAnomaly": true
+    },
+    {
+      "id": "RUN-9908-smk",
+      "name": "Smoke_Navigation_QuickCheck",
+      "branch": "patch-api-fixes",
+      "status": "Flaky",
+      "environment": "QA",
+      "duration": "2m 15s",
+      "timestamp": "1 hour ago",
+      "passRate": 98.0,
+      "triggeredBy": "CI/CD Bot",
+      "commit": "e3f4g5h",
+      "testsCount": 100,
+      "passedCount": 98,
+      "skippedCount": 0,
+      "failedCount": 2,
+      "suite": "Smoke",
+      "hasMemoryAnomaly": false
+    }
+  ],
+  "testCases": [
+    {
+      "id": "verify_security_tokens",
+      "name": "auth.v3.spec.ts: OAuth Access Token Renewal Checks",
+      "suiteId": "prd-smk-01",
+      "runId": "RUN-9911-sec",
+      "folder": "src/security/auth",
+      "status": "Passed",
+      "duration": "350ms",
+      "tag": "security",
+      "priority": "P0 - Critical"
+    },
+    {
+      "id": "verify_checkout_failure",
+      "name": "checkout.spec.ts: Single Click Multi-Item Payment Processing",
+      "suiteId": "ui-e2e-chk",
+      "runId": "RUN-9910-reg",
+      "folder": "test/e2e/payments",
+      "status": "Failed",
+      "duration": "1.8s",
+      "tag": "e2e",
+      "priority": "P0 - Critical",
+      "errorMsg": "StripeAPIException: Decryption Key Revoked",
+      "stackTrace": "at StripePayments.charge (payments.service.ts:182)\nat CheckoutProcess.execute (checkout.controller.ts:45)\nat Object.runTest (checkout.spec.ts:12)"
+    },
+    {
+      "id": "verify_dashboard_widgets",
+      "name": "navigation.spec.ts: Quick Load Layout Rendering Speed",
+      "suiteId": "prd-smk-01",
+      "runId": "RUN-9908-smk",
+      "folder": "src/tests/navigation",
+      "status": "Flaky",
+      "duration": "450ms",
+      "tag": "ui",
+      "priority": "P1 - High",
+      "errorMsg": "TimeoutError: element '.metric-widget' was not found in 400ms"
+    }
+  ],
+  "suites": [
+    {
+      "id": "prd-smk-01",
+      "name": "Prod Critical Smoke",
+      "totalTests": 1500,
+      "duration": "14m 20s",
+      "stability30d: ": 99.1,
+      "stability30d": 99.1,
+      "environment": "Production",
+      "category": "Smoke",
+      "heatmapHistory": ["Passed", "Passed", "Passed", "Passed", "Passed", "Passed", "Passed", "Passed", "Passed", "Passed", "Passed", "Passed", "Passed", "Passed", "Passed", "Passed", "Passed", "Passed", "Passed", "Passed"]
+    },
+    {
+      "id": "ui-e2e-chk",
+      "name": "UI E2E - Checkout",
+      "totalTests": 850,
+      "duration": "5m 45s",
+      "stability30d": 94.2,
+      "environment": "Production",
+      "category": "Regression",
+      "heatmapHistory": ["Passed", "Passed", "Failed", "Passed", "Passed", "Passed", "Passed", "Passed", "Passed", "Passed", "Passed", "Passed", "Passed", "Passed", "Failed", "Passed", "Passed", "Passed", "Passed", "Failed"]
+    }
+  ],
+  "anomalies": [
+    {
+      "id": "StripePayments.chargeKeyRevoked",
+      "type": "FAILING",
+      "text": "Decryption Key Revoked error detected since checkout build #9910.",
+      "badgeStyle": "bg-red-500/10 text-red-400 border border-red-500/20"
+    }
+  ]
+}
