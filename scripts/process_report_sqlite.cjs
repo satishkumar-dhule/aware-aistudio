@@ -14,8 +14,19 @@ try {
   process.exit(1);
 }
 
-// Ensure the db exists
-const db = new DatabaseSync(dbPath);
+
+let db;
+try {
+  db = new DatabaseSync(dbPath);
+  // Test if the database is malformed
+  db.exec('PRAGMA integrity_check;');
+} catch (err) {
+  console.warn('Database is malformed or missing. Recreating...', err.message);
+  try {
+    fs.unlinkSync(dbPath);
+  } catch (e) {}
+  db = new DatabaseSync(dbPath);
+}
 
 // Create tables if they don't exist
 db.exec(`
