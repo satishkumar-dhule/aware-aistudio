@@ -51,6 +51,12 @@ jobs:
         with:
           node-version: 22
 
+      - name: Fetch latest repo state
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main || true
+
       - name: Ingest Reports into SQLite
         run: |
           for ENV_NAME in QA UAT Prod; do
@@ -65,16 +71,29 @@ jobs:
 
       - name: Commit and push telemetry
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add public/telemetry.sqlite
           
           if git diff --staged --quiet; then
             echo "No changes to commit."
           else
             git commit -m "chore: auto-update telemetry data from fan-out [skip ci]"
-            git pull --rebase origin main
-            git push origin main
+            
+            MAX_RETRIES=5
+            for i in $(seq 1 $MAX_RETRIES); do
+              # We use -X theirs to resolve binary file conflicts in favor of our local commit
+              git pull --rebase -X theirs origin main || {
+                # If there's an issue rebasing, we can try to abort and just push forcefully if needed, but let's just abort rebase.
+                git rebase --abort || true
+              }
+              if git push origin main; then
+                echo "Successfully pushed!"
+                exit 0
+              fi
+              echo "Push failed, retrying ($i/$MAX_RETRIES)..."
+              sleep $(( (RANDOM % 5) + 2 ))
+            done
+            echo "Failed to push after $MAX_RETRIES retries."
+            exit 1
           fi
 
       - name: Install dependencies and build
