@@ -80,7 +80,7 @@ export default function TopBar({
   ];
 
   return (
-    <header className="h-[44px] bg-[#111111] border-b border-[#222222] flex justify-between items-center px-4 sticky top-0 z-40 select-none shrink-0 font-sans">
+    <header className="h-[36px] bg-[#111111] border-b border-[#222222] flex justify-between items-center px-4 sticky top-0 z-40 select-none shrink-0 font-sans">
       {/* Search Bar / Left context */}
       <div className="flex items-center gap-4 flex-1 max-w-xl">
         <div className="relative w-full group">

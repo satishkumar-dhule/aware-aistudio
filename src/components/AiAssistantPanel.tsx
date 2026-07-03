@@ -1308,7 +1308,7 @@ ${matchesFound ? matchText : `\n\n#### 🔍 Search Context:\nI did not find dire
   if (!isOpen) return null;
 
   return (
-    <div className="absolute top-0 right-0 h-full w-[400px] bg-[#0f0f0f] border-l border-[#262626] shadow-2xl z-50 flex flex-col overflow-hidden font-sans">
+    <div className="absolute top-0 right-0 h-full w-[360px] bg-[#0f0f0f] border-l border-[#262626] shadow-2xl z-50 flex flex-col overflow-hidden font-sans">
       
       {/* Drawer Header */}
       <div className="p-4 bg-[#141414] border-b border-[#262626] flex items-center justify-between">

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Folder, 
   CheckCircle, 
@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { initialSuites, initialTestCases } from '../data';
 import { Suite, TestCase } from '../types';
+import { BrowserDb } from '../lib/browserDb';
 
 interface SuitesViewProps {
   onSelectTest: (testId: string) => void;
@@ -23,6 +24,15 @@ interface SuitesViewProps {
 
 export default function SuitesView({ onSelectTest, activeEnv, onShowToast }: SuitesViewProps) {
   const [suites, setSuites] = useState<Suite[]>(initialSuites);
+  const [dbTestCases, setDbTestCases] = useState<TestCase[]>(BrowserDb.getTestCases());
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setDbTestCases(BrowserDb.getTestCases());
+    };
+    window.addEventListener('aware_db_update', handleUpdate);
+    return () => window.removeEventListener('aware_db_update', handleUpdate);
+  }, []);
 
   const filteredSuites = suites.filter((suite) => {
     if (activeEnv === 'All') return true;
@@ -40,16 +50,10 @@ export default function SuitesView({ onSelectTest, activeEnv, onShowToast }: Sui
     }
   };
 
-  const handleBulkRetry = (suiteName: string) => {
-    if (onShowToast) {
-      onShowToast(`Bulk retry triggered for all tests in Suite: ${suiteName}. Re-initiating container cluster...`, 'info');
-    }
-  };
-
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#0c0c0c] select-none font-sans flex">
+    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#0c0c0c] select-none font-sans flex">
       {/* Primary Suites Grid list */}
-      <div className="flex-1 space-y-6">
+      <div className="flex-1 space-y-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-white">TestSuite Suites</h2>
           <p className="text-zinc-500 text-xs mt-1">Grouped configurations containing testing modules and automation maps.</p>
@@ -61,7 +65,7 @@ export default function SuitesView({ onSelectTest, activeEnv, onShowToast }: Sui
             <div 
               key={suite.id}
               onClick={() => setSelectedSuite(suite)}
-              className={`p-5 rounded bg-[#131313] border cursor-pointer transition-all duration-150 group relative overflow-hidden ${
+              className={`p-4 rounded bg-[#131313] border cursor-pointer transition-all duration-150 group relative overflow-hidden ${
                 selectedSuite?.id === suite.id 
                   ? 'border-[#4daeff] bg-[#1a1a1a]' 
                   : 'border-[#262626] hover:border-[#4daeff]/40'
@@ -161,7 +165,7 @@ export default function SuitesView({ onSelectTest, activeEnv, onShowToast }: Sui
           <div className="flex-1 overflow-y-auto p-3 bg-[#0d0d0d] space-y-2.5">
             <h4 className="text-[10px] font-mono uppercase font-bold text-zinc-500 tracking-wider">Associated Test Cases</h4>
             <div className="space-y-1.5">
-              {initialTestCases.map((tc) => (
+              {dbTestCases.filter(tc => tc.suiteId === selectedSuite.id || selectedSuite.id === 'prd-smk-01').slice(0, 50).map((tc) => (
                 <div 
                   key={tc.id}
                   onClick={() => onSelectTest(tc.id)}
@@ -180,23 +184,13 @@ export default function SuitesView({ onSelectTest, activeEnv, onShowToast }: Sui
                   </span>
                 </div>
               ))}
+              
+              {dbTestCases.filter(tc => tc.suiteId === selectedSuite.id || selectedSuite.id === 'prd-smk-01').length > 50 && (
+                <div className="p-2 text-center text-[10px] font-mono text-zinc-500">
+                  Showing first 50 tests.
+                </div>
+              )}
             </div>
-          </div>
-
-          {/* Bulk Action Controls */}
-          <div className="p-3 bg-[#151515] border-t border-[#222222] space-y-1.5">
-            <button 
-              onClick={() => handleBulkRetry(selectedSuite.name)}
-              className="w-full py-1.5 bg-[#4daeff] hover:bg-[#66baff] text-black rounded font-mono text-[9px] uppercase font-bold transition-all"
-            >
-              Bulk Execute Suite Tests
-            </button>
-            <button 
-              onClick={() => onShowToast?.("Mock: Opened suite configuration variables manager!", "info")}
-              className="w-full py-1.5 bg-transparent hover:bg-zinc-800 text-zinc-300 border border-[#222222] rounded font-mono text-[9px] uppercase font-bold transition-all flex justify-center items-center gap-1"
-            >
-              <Settings2 size={11} /> Configure Suite Parameters
-            </button>
           </div>
         </aside>
       )}

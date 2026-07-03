@@ -311,7 +311,7 @@ export default function SettingsView({
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#0c0c0c] select-none font-sans">
+    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#0c0c0c] select-none font-sans">
       {/* Title */}
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-white">Settings & Configuration</h2>
@@ -387,10 +387,10 @@ export default function SettingsView({
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         
         {/* Workspace Telemetry Simulator & Database Seeder */}
-        <div className="bg-[#131313] border border-[#262626] rounded p-5 space-y-4 col-span-1 md:col-span-2">
+        <div className="bg-[#131313] border border-[#262626] rounded p-4 space-y-3 col-span-1 md:col-span-2">
           <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
             <Database size={16} className="text-[#4daeff]" /> Browser Database Control Plane
           </h3>
@@ -471,7 +471,7 @@ export default function SettingsView({
         </div>
 
         {/* Enterprise Diagnostics, Export & Import */}
-        <div className="bg-[#131313] border border-[#262626] rounded p-5 space-y-4 col-span-1 md:col-span-2">
+        <div className="bg-[#131313] border border-[#262626] rounded p-4 space-y-3 col-span-1 md:col-span-2">
           <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
             <Wrench size={16} className="text-[#4daeff]" /> Data Layer Integrity, Backups & Verification
           </h3>
@@ -524,7 +524,7 @@ export default function SettingsView({
         </div>
 
         {/* GitHub Actions Scheduler Integration Block */}
-        <div className="bg-[#131313] border border-[#262626] rounded p-5 space-y-4 col-span-1 md:col-span-2">
+        <div className="bg-[#131313] border border-[#262626] rounded p-4 space-y-3 col-span-1 md:col-span-2">
           <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
             <Terminal size={16} className="text-[#a855f7]" /> GitHub Actions Scheduler Monitor
           </h3>
@@ -554,7 +554,7 @@ export default function SettingsView({
         </div>
 
         {/* CI/CD Telemetry Schema & Data Contract Specification Explorer */}
-        <div className="col-span-1 md:col-span-2 bg-[#131313] border border-[#262626] rounded p-5 space-y-5">
+        <div className="col-span-1 md:col-span-2 bg-[#131313] border border-[#262626] rounded p-4 space-y-5">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-[#262626] pb-4">
             <div>
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
@@ -806,7 +806,7 @@ export default function SettingsView({
             <div className="space-y-6 animate-fade-in text-xs leading-relaxed text-zinc-300">
               
               {/* Configuration Panel */}
-              <div className="p-5 bg-[#0a0a0a] border border-zinc-900 rounded-lg space-y-4 shadow-xl">
+              <div className="p-4 bg-[#0a0a0a] border border-zinc-900 rounded-lg space-y-4 shadow-xl">
                 <div className="flex items-center justify-between border-b border-zinc-900 pb-3">
                   <h4 className="text-sm font-bold text-white flex items-center gap-2">
                     <Sliders size={16} className="text-[#4daeff]" /> 
@@ -819,7 +819,7 @@ export default function SettingsView({
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   
                   {/* File path Input */}
                   <div className="space-y-1.5">
@@ -897,7 +897,7 @@ export default function SettingsView({
               </div>
 
               {/* Step-by-Step Interactive Implementation Guide */}
-              <div className="p-5 bg-zinc-900/20 border border-zinc-850 rounded-lg space-y-4">
+              <div className="p-4 bg-zinc-900/20 border border-zinc-850 rounded-lg space-y-4">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-zinc-900 pb-3">
                   <div className="space-y-0.5">
                     <h4 className="text-sm font-bold text-white flex items-center gap-2">

@@ -360,11 +360,11 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
       </div>
 
       {/* Main Stats Scrollable Workspace */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* Bento Grid Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="bento-comparison-metrics">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3" id="bento-comparison-metrics">
           {/* Card 1: Pass Rate Comparison */}
-          <div className="bg-[#121212] border border-[#262626] rounded-lg p-4 flex flex-col justify-between hover:border-zinc-700 transition-all duration-200">
+          <div className="bg-[#121212] border border-[#262626] rounded-lg p-3 flex flex-col justify-between hover:border-zinc-700 transition-all duration-200">
             <div className="flex justify-between items-start">
               <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 font-semibold">Pass Rate Change</span>
               <Gauge size={16} className="text-[#4daeff]" />
@@ -394,7 +394,7 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
           </div>
 
           {/* Card 2: Duration Comparison */}
-          <div className="bg-[#121212] border border-[#262626] rounded-lg p-4 flex flex-col justify-between hover:border-zinc-700 transition-all duration-200">
+          <div className="bg-[#121212] border border-[#262626] rounded-lg p-3 flex flex-col justify-between hover:border-zinc-700 transition-all duration-200">
             <div className="flex justify-between items-start">
               <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 font-semibold">Duration Shift</span>
               <Clock size={16} className="text-[#4daeff]" />
@@ -423,7 +423,7 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
           </div>
 
           {/* Card 3: Test Count & Volumes */}
-          <div className="bg-[#121212] border border-[#262626] rounded-lg p-4 flex flex-col justify-between hover:border-zinc-700 transition-all duration-200">
+          <div className="bg-[#121212] border border-[#262626] rounded-lg p-3 flex flex-col justify-between hover:border-zinc-700 transition-all duration-200">
             <div className="flex justify-between items-start">
               <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 font-semibold">Test Scale Diff</span>
               <Layers size={16} className="text-emerald-400" />
@@ -450,7 +450,7 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
           </div>
 
           {/* Card 4: Diagnostics Summary */}
-          <div className="bg-[#121212] border border-[#262626] rounded-lg p-4 flex flex-col justify-between hover:border-zinc-700 transition-all duration-200">
+          <div className="bg-[#121212] border border-[#262626] rounded-lg p-3 flex flex-col justify-between hover:border-zinc-700 transition-all duration-200">
             <div className="flex justify-between items-start">
               <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 font-semibold">Status Anomalies</span>
               <Flame size={16} className="text-red-400" />
@@ -483,7 +483,7 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
         {/* Side-by-side run metadata cards */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4" id="metadata-comparison-details">
           {/* Baseline metadata */}
-          <div className="bg-[#101010] border border-[#262626] rounded-lg p-4 relative overflow-hidden">
+          <div className="bg-[#101010] border border-[#262626] rounded-lg p-3 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1.5 h-full bg-[#4daeff]"></div>
             <div className="flex justify-between items-center mb-3">
               <h3 className="text-xs font-mono uppercase tracking-wider font-bold text-zinc-300">Primary Baseline Run Profile</h3>
@@ -532,7 +532,7 @@ export default function ComparisonView({ onSelectTest, onShowToast }: Comparison
           </div>
 
           {/* Target metadata */}
-          <div className="bg-[#101010] border border-[#262626] rounded-lg p-4 relative overflow-hidden">
+          <div className="bg-[#101010] border border-[#262626] rounded-lg p-3 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-500"></div>
             <div className="flex justify-between items-center mb-3">
               <h3 className="text-xs font-mono uppercase tracking-wider font-bold text-zinc-300">Comparison Target Run Profile</h3>

@@ -206,10 +206,10 @@ export class BrowserDb {
   }
 
   static saveRuns(runs: Run[]) {
-    // Prevent Storage Quota Exceeded by pruning extreme historical simulated sets
+    // Keep only the last 50 runs to auto-purge older ones and prevent storage overflow
     let safeList = [...runs];
-    if (safeList.length > 500) {
-      safeList = safeList.slice(0, 500);
+    if (safeList.length > 50) {
+      safeList = safeList.slice(0, 50);
     }
     
     const seen = new Set<string>();
@@ -264,9 +264,10 @@ export class BrowserDb {
   }
 
   static saveTestCases(testCases: TestCase[]) {
+    // Keep up to 10000 test cases for full suite runs
     let safeList = [...testCases];
-    if (safeList.length > 1000) {
-      safeList = safeList.slice(0, 1000);
+    if (safeList.length > 10000) {
+      safeList = safeList.slice(0, 10000);
     }
     
     const seen = new Set<string>();
@@ -527,6 +528,10 @@ export class BrowserDb {
     const passedPercent = Math.floor(75 + Math.random() * 25);
     const isPassed = passedPercent >= 90;
     
+    const testsCount = 500;
+    const failedCount = Math.round(testsCount * ((100 - passedPercent) / 100));
+    const passedCount = testsCount - failedCount;
+    
     const newRun: Run = {
       id,
       name: `${chosenSuite}_Simulated_Cycle_${runNum}`,
@@ -536,12 +541,12 @@ export class BrowserDb {
       duration: `${Math.floor(1 + Math.random() * 8)}m ${Math.floor(Math.random() * 60)}s`,
       timestamp: 'Just now',
       passRate: passedPercent,
-      triggeredBy: 'Chrome AI Bot',
+      triggeredBy: 'GitHub Actions',
       commit: `sim-${runNum}`,
-      testsCount: 100,
-      passedCount: passedPercent,
+      testsCount: testsCount,
+      passedCount: passedCount,
       skippedCount: 0,
-      failedCount: 100 - passedPercent,
+      failedCount: failedCount,
       suite: chosenSuite,
       hasMemoryAnomaly: Math.random() > 0.7,
     };
@@ -549,44 +554,23 @@ export class BrowserDb {
     runs.unshift(newRun);
     this.saveRuns(runs);
 
-    // Create 3 test cases for this run
-    const newTestCases: TestCase[] = [
-      {
-        id: `sim_test_login_${runNum}`,
-        name: `auth.service.spec.ts: Login Flow [Sim ${runNum}]`,
+    // Create 500 test cases for this run
+    const newTestCases: TestCase[] = Array.from({ length: testsCount }).map((_, i) => {
+      const isFailedTC = i < failedCount;
+      return {
+        id: `sim_test_${runNum}_${i}`,
+        name: `module_${Math.floor(i / 10)}.spec.ts: Subtest ${i} [Sim ${runNum}]`,
         suiteId: 'prd-smk-01',
         runId: id,
-        folder: 'src/services/auth',
-        status: isPassed ? 'Passed' : 'Failed',
-        duration: '1.2s',
-        tag: 'auth',
-        priority: 'P0 - Critical',
-        errorMsg: isPassed ? undefined : 'AssertionError: expected unauthorized request to fail with 401',
-        stackTrace: isPassed ? undefined : 'at auth.service.spec.ts:89\nat processTicksAndRejections',
-      },
-      {
-        id: `sim_test_checkout_${runNum}`,
-        name: `checkout.spec.ts: Payment API [Sim ${runNum}]`,
-        suiteId: 'prd-smk-01',
-        runId: id,
-        folder: 'test/e2e/flows',
-        status: 'Passed',
-        duration: '4.5s',
-        tag: 'e2e',
-        priority: 'P1 - High',
-      },
-      {
-        id: `sim_test_ui_${runNum}`,
-        name: `navbar.spec.ts: Render elements [Sim ${runNum}]`,
-        suiteId: 'prd-smk-01',
-        runId: id,
-        folder: 'src/components',
-        status: 'Passed',
-        duration: '340ms',
-        tag: 'ui',
-        priority: 'P2 - Medium',
-      }
-    ];
+        folder: `src/tests/module_${Math.floor(i / 10)}`,
+        status: isFailedTC ? 'Failed' : 'Passed',
+        duration: `${Math.floor(Math.random() * 100)}ms`,
+        tag: i % 2 === 0 ? 'api' : 'ui',
+        priority: i % 10 === 0 ? 'P0 - Critical' : 'P1 - High',
+        errorMsg: isFailedTC ? 'AssertionError: expected value to equal true' : undefined,
+        stackTrace: isFailedTC ? 'at test.spec.ts:89\nat processTicksAndRejections' : undefined,
+      };
+    });
 
     const updatedTCs = [...newTestCases, ...testCases];
     this.saveTestCases(updatedTCs);

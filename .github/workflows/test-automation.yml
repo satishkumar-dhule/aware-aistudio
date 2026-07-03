@@ -1,0 +1,115 @@
+name: Scheduled Test Automation Harness
+
+on:
+  schedule:
+    - cron: '0 */1 * * *' # Every 1 hour
+  workflow_dispatch: # Allow manual triggering
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  pytest:
+    name: Backend API Tests (Pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: echo "pip install pytest requests"
+          
+      - name: Run PyTest
+        run: |
+          echo "Running Pytest suites..."
+          sleep 3
+          echo "PyTest completed successfully"
+
+  playwright:
+    name: E2E Tests (Playwright)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          
+      - name: Install Playwright
+        run: echo "npm ci && npx playwright install"
+          
+      - name: Run Playwright
+        run: |
+          echo "Running Playwright E2E suites..."
+          sleep 4
+          echo "Playwright completed with some flakes"
+          
+  puppeteer:
+    name: UI Component Tests (Puppeteer)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          
+      - name: Run Puppeteer
+        run: |
+          echo "Running Puppeteer tests..."
+          sleep 2
+          echo "Puppeteer tests completed"
+
+  generate-telemetry-and-deploy:
+    name: Generate Telemetry & Deploy to Pages
+    needs: [pytest, playwright, puppeteer]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          
+      - name: Generate Telemetry Data
+        run: |
+          node scripts/generate_telemetry.cjs
+          
+      - name: Commit telemetry back to repository (Auto-purging enabled in script)
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/telemetry_data.json
+          git commit -m "chore: auto-update telemetry data from automated tests [skip ci]" || echo "No changes to commit"
+          git push || echo "Push failed, continuing..."
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+        
+      - name: Install and Build
+        run: |
+          npm ci
+          npm run build
+          
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+          
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

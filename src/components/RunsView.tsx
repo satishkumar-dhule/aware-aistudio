@@ -31,7 +31,13 @@ interface RunsViewProps {
 export default function RunsView({ searchQuery, onRefreshData, onSelectTest, activeEnv, onTriggerAi, onShowToast }: RunsViewProps) {
   const [runs, setRuns] = useState<Run[]>(BrowserDb.getRuns());
   const [selectedRun, setSelectedRun] = useState<Run>(BrowserDb.getRuns()[1] || BrowserDb.getRuns()[0]);
+  const [runTestCases, setRunTestCases] = useState<TestCase[]>(() => {
+    const initialRun = BrowserDb.getRuns()[1] || BrowserDb.getRuns()[0];
+    return initialRun ? BrowserDb.getTestCases().filter(tc => tc.runId === initialRun.id) : [];
+  });
   const [activeTab, setActiveTab] = useState<'Summary' | 'Results' | 'Logs'>('Summary');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 25;
 
   // Synchronize with database updates
   useEffect(() => {
@@ -42,7 +48,9 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
       setSelectedRun(prev => {
         if (!prev) return prev;
         const found = updatedRuns.find(r => r.id === prev.id);
-        return found || prev;
+        const activeRun = found || prev;
+        setRunTestCases(BrowserDb.getTestCases().filter(tc => tc.runId === activeRun.id));
+        return activeRun;
       });
     };
     window.addEventListener('aware_db_update', handleUpdate);
@@ -98,6 +106,7 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
     setStatusFilters({ All: true, Pass: true, Fail: true, Flaky: true });
     setEnvFilter('All');
     setSuiteFilter('All');
+    setCurrentPage(1);
   };
 
   const toggleStatusFilter = (key: keyof typeof statusFilters) => {
@@ -148,6 +157,14 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
   };
 
   const filteredRuns = getFilteredRuns();
+  
+  const totalPages = Math.ceil(filteredRuns.length / ITEMS_PER_PAGE);
+  const paginatedRuns = filteredRuns.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  // Reset to page 1 if filtered results change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilters, envFilter, suiteFilter, sortBy]);
 
   const getStatusIcon = (status: Run['status'], size = 16) => {
     switch (status) {
@@ -170,7 +187,7 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
   return (
     <div className="flex-1 flex overflow-hidden bg-[#0c0c0c] select-none font-sans">
       {/* Filters Left Sidebar */}
-      <aside className="w-[200px] border-r border-[#222222] bg-[#111111] flex flex-col shrink-0 overflow-y-auto">
+      <aside className="w-[160px] border-r border-[#222222] bg-[#111111] flex flex-col shrink-0 overflow-y-auto">
         <div className="p-3 border-b border-[#222222] flex justify-between items-center sticky top-0 bg-[#111111] z-10">
           <h2 className="text-[10px] font-mono uppercase font-bold tracking-widest text-zinc-300 flex items-center gap-1.5">
             <SlidersHorizontal size={11} /> Filters
@@ -271,9 +288,9 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
         </div>
 
         {/* Scrollable runs feed list */}
-        <div className="flex-1 overflow-y-auto divide-y divide-[#262626]/40">
-          {filteredRuns.length > 0 ? (
-            filteredRuns.map((run) => {
+        <div className="flex-1 overflow-y-auto divide-y divide-[#262626]/40 flex flex-col">
+          {paginatedRuns.length > 0 ? (
+            paginatedRuns.map((run) => {
               const isSelected = selectedRun.id === run.id;
               return (
                 <div
@@ -308,11 +325,32 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
               No runs match active status or environment filter selections.
             </div>
           )}
+          
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="p-3 border-t border-[#262626] bg-[#101010] flex justify-between items-center mt-auto">
+              <button 
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 bg-[#1a1a1a] border border-[#262626] text-zinc-300 text-xs rounded hover:bg-[#252525] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <span className="text-xs text-zinc-500">Page {currentPage} of {totalPages}</span>
+              <button 
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 bg-[#1a1a1a] border border-[#262626] text-zinc-300 text-xs rounded hover:bg-[#252525] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
       {/* Right Column: Run Details (Progressive Disclosure) */}
-      <aside className="w-[450px] flex-col h-full bg-[#101010] flex shrink-0 border-l border-[#262626]">
+      <aside className="w-[360px] flex-col h-full bg-[#101010] flex shrink-0 border-l border-[#262626]">
         {/* Detail Header */}
         <div className="p-4 bg-[#141414] border-b border-[#262626]">
           <div className="flex justify-between items-start mb-4">
@@ -331,9 +369,6 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
               </div>
               <h2 className="text-sm font-bold text-white break-all">{selectedRun.name}</h2>
             </div>
-            <button className="w-7 h-7 rounded hover:bg-[#1c1c1c] text-zinc-400 flex items-center justify-center transition-colors">
-              <X size={16} />
-            </button>
           </div>
 
           {/* Sub Navigation Details tabs */}
@@ -435,12 +470,9 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
               {/* Artifacts Panel */}
               <div className="pt-2 border-t border-[#262626]/50">
                 <h3 className="text-[10px] font-mono uppercase font-bold tracking-widest text-zinc-500 mb-3">Artifacts</h3>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2">
                   <button onClick={() => setActiveTab('Logs')} className="flex items-center justify-center gap-2 p-2 rounded border border-[#262626] bg-[#0c0c0c] hover:bg-[#1c1c1c] text-zinc-200 text-xs transition-colors">
                     <Terminal size={14} className="text-zinc-500" /> Terminal Logs
-                  </button>
-                  <button onClick={() => onShowToast?.("Simulation: video recording MP4 download initialized...", "success")} className="flex items-center justify-center gap-2 p-2 rounded border border-[#262626] bg-[#0c0c0c] hover:bg-[#1c1c1c] text-zinc-200 text-xs transition-colors">
-                    <Video size={14} className="text-zinc-500" /> Recording MP4
                   </button>
                 </div>
               </div>
@@ -449,11 +481,10 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
 
           {activeTab === 'Results' && (
             <div className="space-y-3">
-              <h3 className="text-[10px] font-mono uppercase font-bold tracking-widest text-zinc-500">Active Test Cases</h3>
+              <h3 className="text-[10px] font-mono uppercase font-bold tracking-widest text-zinc-500">Active Test Cases ({runTestCases.length})</h3>
               <div className="space-y-2">
-                {BrowserDb.getTestCases()
-                  .filter(t => t.runId === selectedRun.id || selectedRun.id === 'RUN-8492-AX')
-                  .map(tc => (
+                {runTestCases.length > 0 ? (
+                  runTestCases.slice(0, 50).map(tc => (
                     <div 
                       key={tc.id} 
                       className="p-3 bg-[#121212] border border-[#262626] rounded flex flex-col gap-2 group hover:border-[#4daeff]/30 transition-all"
@@ -486,7 +517,18 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
                         </button>
                       )}
                     </div>
-                  ))}
+                  ))
+                ) : (
+                  <div className="p-4 text-center text-xs text-zinc-500 border border-[#262626] rounded bg-[#121212]">
+                    No test cases found for this run.
+                  </div>
+                )}
+                
+                {runTestCases.length > 50 && (
+                  <div className="p-2 text-center text-[10px] font-mono text-zinc-500">
+                    Showing first 50 of {runTestCases.length} tests. View full list in the Tests tab.
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -519,16 +561,6 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
               </div>
             </div>
           )}
-        </div>
-
-        {/* View Full Report footer */}
-        <div className="p-4 border-t border-[#262626] bg-[#141414]">
-          <button 
-            onClick={handleReRun}
-            className="w-full py-2.5 bg-[#4daeff]/10 hover:bg-[#4daeff]/20 text-[#4daeff] border border-[#4daeff]/30 rounded font-mono text-[10px] uppercase font-bold transition-all flex justify-center items-center gap-1.5"
-          >
-            Re-run Pipeline <RefreshCw size={12} />
-          </button>
         </div>
       </aside>
     </div>

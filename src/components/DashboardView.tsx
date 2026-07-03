@@ -128,7 +128,7 @@ export default function DashboardView({ onNavigateToTab, onSelectTest, activeEnv
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#0c0c0c] select-none font-sans">
+    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#0c0c0c] select-none font-sans">
       {/* Title block */}
       <div className="flex justify-between items-end">
         <div>
@@ -142,7 +142,7 @@ export default function DashboardView({ onNavigateToTab, onSelectTest, activeEnv
       {/* Metrics Cards Grid */}
       <div className="grid grid-cols-4 gap-4">
         {/* Pass Rate */}
-        <div className="bg-[#131313] border border-[#262626] rounded p-4 flex flex-col justify-between h-24 relative overflow-hidden group hover:border-[#2e7d32]/50 transition-colors duration-150">
+        <div className="bg-[#131313] border border-[#262626] rounded p-3 flex flex-col justify-between h-20 relative overflow-hidden group hover:border-[#2e7d32]/50 transition-colors duration-150">
           <div className="flex justify-between items-start">
             <span className="text-[10px] font-mono uppercase font-bold tracking-widest text-zinc-400">Pass Rate</span>
             <CheckCircle size={16} className="text-[#81c784]" />
@@ -154,7 +154,7 @@ export default function DashboardView({ onNavigateToTab, onSelectTest, activeEnv
         </div>
 
         {/* Avg Duration */}
-        <div className="bg-[#131313] border border-[#262626] rounded p-4 flex flex-col justify-between h-24 relative overflow-hidden group hover:border-[#4daeff]/50 transition-colors duration-150">
+        <div className="bg-[#131313] border border-[#262626] rounded p-3 flex flex-col justify-between h-20 relative overflow-hidden group hover:border-[#4daeff]/50 transition-colors duration-150">
           <div className="flex justify-between items-start">
             <span className="text-[10px] font-mono uppercase font-bold tracking-widest text-zinc-400">Avg Duration</span>
             <Clock size={16} className="text-[#4daeff]" />
@@ -166,7 +166,7 @@ export default function DashboardView({ onNavigateToTab, onSelectTest, activeEnv
         </div>
 
         {/* Total Runs */}
-        <div className="bg-[#131313] border border-[#262626] rounded p-4 flex flex-col justify-between h-24 relative overflow-hidden group hover:border-zinc-700 transition-colors duration-150">
+        <div className="bg-[#131313] border border-[#262626] rounded p-3 flex flex-col justify-between h-20 relative overflow-hidden group hover:border-zinc-700 transition-colors duration-150">
           <div className="flex justify-between items-start">
             <span className="text-[10px] font-mono uppercase font-bold tracking-widest text-zinc-400">Total Runs</span>
             <Layers size={16} className="text-zinc-400" />
@@ -178,7 +178,7 @@ export default function DashboardView({ onNavigateToTab, onSelectTest, activeEnv
         </div>
 
         {/* Flakiness Alert */}
-        <div className="bg-[#131313] border border-[#c62828]/50 rounded p-4 flex flex-col justify-between h-24 relative overflow-hidden group hover:bg-[#c62828]/5 transition-colors duration-150 cursor-pointer" onClick={() => onNavigateToTab('Tests')}>
+        <div className="bg-[#131313] border border-[#c62828]/50 rounded p-3 flex flex-col justify-between h-20 relative overflow-hidden group hover:bg-[#c62828]/5 transition-colors duration-150 cursor-pointer" onClick={() => onNavigateToTab('Tests')}>
           <div className="absolute inset-0 bg-[#c62828] opacity-[0.02] pointer-events-none"></div>
           <div className="flex justify-between items-start relative z-10">
             <span className="text-[10px] font-mono uppercase font-bold tracking-widest text-red-400">Flakiness Alert</span>
@@ -216,7 +216,7 @@ export default function DashboardView({ onNavigateToTab, onSelectTest, activeEnv
       {/* Main Grid: Heatmap + Active Anomalies */}
       <div className="grid grid-cols-12 gap-4">
         {/* Heatmap Cell Grid */}
-        <div className="col-span-8 bg-[#131313] border border-[#262626] rounded p-5 flex flex-col justify-between relative overflow-hidden">
+        <div className="col-span-8 bg-[#131313] border border-[#262626] rounded p-4 flex flex-col justify-between relative overflow-hidden">
           <div className="flex justify-between items-center mb-6">
             <div>
               <h3 className="text-sm font-bold text-white">Suite Stability (Last 14 Days)</h3>
@@ -282,7 +282,7 @@ export default function DashboardView({ onNavigateToTab, onSelectTest, activeEnv
         </div>
 
         {/* Active Anomalies Feed List */}
-        <div className="col-span-4 bg-[#131313] border border-[#262626] rounded p-5 flex flex-col justify-between">
+        <div className="col-span-4 bg-[#131313] border border-[#262626] rounded p-4 flex flex-col justify-between">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
               <AlertTriangle size={15} className="text-red-400" /> Active Anomalies

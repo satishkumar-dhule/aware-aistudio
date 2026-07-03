@@ -29,7 +29,8 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onTr
   const [testCases, setTestCases] = useState<TestCase[]>(BrowserDb.getTestCases());
   const [selectedTest, setSelectedTest] = useState<TestCase>(BrowserDb.getTestCases()[0]);
   const [activeDetailTab, setActiveDetailTab] = useState<'Error' | 'History' | 'Metrics'>('Error');
-  const [isRetrying, setIsRetrying] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 50;
 
   // Synchronize dynamic state from database
   useEffect(() => {
@@ -72,6 +73,7 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onTr
   const handleFilterReset = () => {
     setStatusFilters({ Failed: true, Flaky: true, Passed: true });
     setPriorityFilters({ P0: true, P1: true, P2: true });
+    setCurrentPage(1);
   };
 
   const getFilteredTests = () => {
@@ -119,31 +121,19 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onTr
   };
 
   const filteredTests = getFilteredTests();
+  
+  const totalPages = Math.ceil(filteredTests.length / ITEMS_PER_PAGE);
+  const paginatedTests = filteredTests.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-  const handleRetryTest = () => {
-    setIsRetrying(true);
-    setTimeout(() => {
-      setIsRetrying(false);
-      
-      const allTCs = BrowserDb.getTestCases();
-      const updated = allTCs.map(t => t.id === selectedTest.id ? { 
-        ...t, 
-        status: 'Passed' as const, 
-        errorMsg: undefined, 
-        stackTrace: undefined 
-      } : t);
-      
-      BrowserDb.saveTestCases(updated);
-      if (onShowToast) {
-        onShowToast(`Simulation retry complete for test: ${selectedTest.name}. Result is Passed!`, 'success');
-      }
-    }, 1500);
-  };
+  // Reset to page 1 if filtered results change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilters, priorityFilters, sortBy, activeEnv]);
 
   return (
     <div className="flex-1 flex overflow-hidden bg-[#0c0c0c] select-none font-sans">
       {/* Faceted Filters Left column */}
-      <aside className="w-[200px] border-r border-[#222222] bg-[#111111] flex flex-col shrink-0 overflow-y-auto">
+      <aside className="w-[160px] border-r border-[#222222] bg-[#111111] flex flex-col shrink-0 overflow-y-auto">
         <div className="p-3 border-b border-[#222222] flex justify-between items-center sticky top-0 bg-[#111111] z-10">
           <h2 className="text-[10px] font-mono uppercase font-bold tracking-widest text-zinc-300">Filters</h2>
           <button onClick={handleFilterReset} className="text-[9px] font-mono font-bold uppercase text-[#4daeff] hover:underline">Clear</button>
@@ -211,9 +201,10 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onTr
         </div>
 
         {/* Scrollable list content */}
-        <div className="flex-1 overflow-y-auto divide-y divide-[#262626]/40">
-          {filteredTests.map((tc) => {
-            const isSelected = selectedTest.id === tc.id;
+        <div className="flex-1 overflow-y-auto divide-y divide-[#262626]/40 flex flex-col">
+          {paginatedTests.length > 0 ? (
+            paginatedTests.map((tc) => {
+              const isSelected = selectedTest?.id === tc.id;
             return (
               <div
                 key={tc.id}
@@ -269,51 +260,75 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onTr
                 </div>
               </div>
             );
-          })}
+          })
+        ) : (
+          <div className="p-8 text-center text-zinc-500 text-xs">
+            No test cases match active status or environment filter selections.
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="p-3 border-t border-[#262626] bg-[#101010] flex justify-between items-center mt-auto">
+            <button 
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1 bg-[#1a1a1a] border border-[#262626] text-zinc-300 text-xs rounded hover:bg-[#252525] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <span className="text-xs text-zinc-500">Page {currentPage} of {totalPages}</span>
+            <button 
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 bg-[#1a1a1a] border border-[#262626] text-zinc-300 text-xs rounded hover:bg-[#252525] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+        )}
         </div>
       </section>
 
       {/* Right Column: Detail Pane (Comprehensive execution logs, error output, diffs) */}
-      <aside className="w-[450px] flex-col h-full bg-[#101010] flex shrink-0">
+      <aside className="w-[360px] flex-col h-full bg-[#101010] flex shrink-0">
         {/* Detail Header */}
         <div className="p-4 border-b border-[#262626]">
-          <div className="flex justify-between items-start mb-3">
-            <span className={`px-2 py-0.5 rounded-sm font-mono text-[9px] uppercase font-bold border ${
-              selectedTest.status === 'Failed' 
-                ? 'bg-red-500/15 text-red-400 border-red-500/30' 
-                : selectedTest.status === 'Flaky'
-                ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-                : 'bg-zinc-800 text-zinc-400 border-zinc-700'
-            }`}>
-              {selectedTest.status}
-            </span>
-            <div className="flex gap-2">
-              <button 
-                onClick={handleRetryTest}
-                disabled={isRetrying}
-                className="px-2.5 py-1 border border-[#262626] rounded text-[10px] font-mono uppercase font-bold hover:border-[#4daeff] text-zinc-300 hover:text-[#4daeff] bg-transparent flex items-center gap-1 transition-colors disabled:opacity-50"
-              >
-                <RefreshCw size={11} className={isRetrying ? 'animate-spin' : ''} />
-                {isRetrying ? 'Executing' : 'Retry'}
-              </button>
-              <button 
-                onClick={() => {
-                  navigator.clipboard.writeText(`${selectedTest.folder}/${selectedTest.name}`);
-                  if (onShowToast) onShowToast("Simulation: Source code file path copied to clipboard!", "success");
-                }}
-                className="px-2.5 py-1 border border-[#262626] rounded text-[10px] font-mono uppercase font-bold hover:border-[#4daeff] text-zinc-300 hover:text-[#4daeff] bg-transparent flex items-center gap-1 transition-colors"
-              >
-                <Code size={11} /> Code
-              </button>
-            </div>
-          </div>
+          {selectedTest ? (
+            <>
+              <div className="flex justify-between items-start mb-3">
+                <span className={`px-2 py-0.5 rounded-sm font-mono text-[9px] uppercase font-bold border ${
+                  selectedTest.status === 'Failed' 
+                    ? 'bg-red-500/15 text-red-400 border-red-500/30' 
+                    : selectedTest.status === 'Flaky'
+                    ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                    : 'bg-zinc-800 text-zinc-400 border-zinc-700'
+                }`}>
+                  {selectedTest.status}
+                </span>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${selectedTest.folder}/${selectedTest.name}`);
+                      if (onShowToast) onShowToast("Simulation: Source code file path copied to clipboard!", "success");
+                    }}
+                    className="px-2.5 py-1 border border-[#262626] rounded text-[10px] font-mono uppercase font-bold hover:border-[#4daeff] text-zinc-300 hover:text-[#4daeff] bg-transparent flex items-center gap-1 transition-colors"
+                  >
+                    <Code size={11} /> Code
+                  </button>
+                </div>
+              </div>
 
-          <h2 className="text-sm font-bold text-white break-all leading-tight mb-2">{selectedTest.name}</h2>
-          
-          <div className="flex items-center gap-4 text-xs font-mono text-zinc-500">
-            <span className="flex items-center gap-1 leading-none"><FolderOpen size={12} /> {selectedTest.folder}</span>
-            <span className="flex items-center gap-1 leading-none"><Clock size={12} /> {selectedTest.duration}</span>
-          </div>
+              <h2 className="text-sm font-bold text-white break-all leading-tight mb-2">{selectedTest.name}</h2>
+              
+              <div className="flex items-center gap-4 text-xs font-mono text-zinc-500">
+                <span className="flex items-center gap-1 leading-none"><FolderOpen size={12} /> {selectedTest.folder}</span>
+                <span className="flex items-center gap-1 leading-none"><Clock size={12} /> {selectedTest.duration}</span>
+              </div>
+            </>
+          ) : (
+            <div className="text-sm font-bold text-zinc-500">Select a test case</div>
+          )}
         </div>
 
         {/* Tab Selection */}
@@ -336,7 +351,7 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onTr
 
         {/* Content Container */}
         <div className="flex-1 overflow-y-auto p-4 bg-[#0d0d0d] space-y-4">
-          {activeDetailTab === 'Error' && (
+          {selectedTest && activeDetailTab === 'Error' && (
             <>
               {selectedTest.errorMsg ? (
                 <>
@@ -419,7 +434,7 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onTr
             </>
           )}
 
-          {activeDetailTab === 'History' && (
+          {selectedTest && activeDetailTab === 'History' && (
             <div className="space-y-3">
               <h3 className="text-[10px] font-mono uppercase font-bold tracking-widest text-zinc-500">Historical Execution Logs</h3>
               <div className="space-y-2">
@@ -443,7 +458,7 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onTr
             </div>
           )}
 
-          {activeDetailTab === 'Metrics' && (
+          {selectedTest && activeDetailTab === 'Metrics' && (
             <div className="space-y-4">
               <h3 className="text-[10px] font-mono uppercase font-bold tracking-widest text-zinc-500">Telemetry Performance Metrics</h3>
               

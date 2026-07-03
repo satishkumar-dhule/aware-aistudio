@@ -30,9 +30,9 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   ];
 
   return (
-    <aside className="w-[200px] bg-[#111111] border-r border-[#222222] flex flex-col h-full py-4 select-none shrink-0">
+    <aside className="w-[160px] bg-[#111111] border-r border-[#222222] flex flex-col h-full py-3 select-none shrink-0">
       {/* Brand Header */}
-      <div className="px-4 mb-5 flex items-center gap-2.5">
+      <div className="px-3 mb-4 flex items-center gap-2">
         <div className="w-7 h-7 rounded bg-[#4daeff]/10 border border-[#4daeff]/30 flex items-center justify-center text-[#4daeff]">
           <Eye size={16} className="stroke-[2.5]" />
         </div>

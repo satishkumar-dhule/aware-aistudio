@@ -54,7 +54,7 @@ export default function AnalyticsView({ onSelectTest, activeEnv, onShowToast }: 
   const areaD = `${pathD} L ${points[points.length - 1].x} ${height - padding} L ${points[0].x} ${height - padding} Z`;
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#0c0c0c] select-none font-sans">
+    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#0c0c0c] select-none font-sans">
       {/* Page Header */}
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-white">System Analytics</h2>
@@ -64,7 +64,7 @@ export default function AnalyticsView({ onSelectTest, activeEnv, onShowToast }: 
       {/* Analytics Main Bento Grid Layout */}
       <div className="grid grid-cols-12 gap-4">
         {/* Pass Rate Trend Interactive SVG Chart */}
-        <div className="col-span-12 lg:col-span-7 bg-[#131313] border border-[#262626] rounded p-5 flex flex-col justify-between">
+        <div className="col-span-12 lg:col-span-7 bg-[#131313] border border-[#262626] rounded p-4 flex flex-col justify-between">
           <div className="flex justify-between items-center mb-4">
             <div>
               <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
@@ -136,7 +136,7 @@ export default function AnalyticsView({ onSelectTest, activeEnv, onShowToast }: 
         </div>
 
         {/* Browser Testing Environment Matrix */}
-        <div className="col-span-12 lg:col-span-5 bg-[#131313] border border-[#262626] rounded p-5 flex flex-col justify-between">
+        <div className="col-span-12 lg:col-span-5 bg-[#131313] border border-[#262626] rounded p-4 flex flex-col justify-between">
           <div>
             <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
               <Globe size={15} className="text-zinc-400" /> Environment Matrix (Cross-Browser)
@@ -182,7 +182,7 @@ export default function AnalyticsView({ onSelectTest, activeEnv, onShowToast }: 
         </div>
 
         {/* Duration Distribution histogram columns */}
-        <div className="col-span-12 lg:col-span-6 bg-[#131313] border border-[#262626] rounded p-5 flex flex-col justify-between">
+        <div className="col-span-12 lg:col-span-6 bg-[#131313] border border-[#262626] rounded p-4 flex flex-col justify-between">
           <div className="flex justify-between items-center mb-4">
             <div>
               <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
@@ -233,7 +233,7 @@ export default function AnalyticsView({ onSelectTest, activeEnv, onShowToast }: 
         </div>
 
         {/* Top Flaky Test Cases list */}
-        <div className="col-span-12 lg:col-span-6 bg-[#131313] border border-[#262626] rounded p-5 flex flex-col justify-between">
+        <div className="col-span-12 lg:col-span-6 bg-[#131313] border border-[#262626] rounded p-4 flex flex-col justify-between">
           <div>
             <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
               <AlertOctagon size={15} className="text-amber-500 animate-pulse" /> Highly Flaky Testing Files
