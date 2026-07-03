@@ -20,7 +20,7 @@ export default function App() {
   const [timeRange, setTimeRange] = useState('Last 30 Days');
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
-  const [simulationMode, setSimulationMode] = useState(true);
+  const [simulationMode, setSimulationMode] = useState(false);
   const [activeEnv, setActiveEnv] = useState<EnvType>('All');
   
   // AI assistant states

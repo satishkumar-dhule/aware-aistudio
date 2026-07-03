@@ -1,9 +1,9 @@
-name: Scheduled Test Automation Harness
+name: Scheduled Real Tests
 
 on:
   schedule:
-    - cron: '0 */1 * * *' # Every 1 hour
-  workflow_dispatch: # Allow manual triggering
+    - cron: '0 * * * *'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -11,100 +11,50 @@ permissions:
   id-token: write
 
 jobs:
-  pytest:
-    name: Backend API Tests (Pytest)
+  test-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-node@v4
         with:
-          python-version: '3.11'
+          node-version: 18
           
       - name: Install dependencies
-        run: echo "pip install pytest requests"
-          
-      - name: Run PyTest
         run: |
-          echo "Running Pytest suites..."
-          sleep 3
-          echo "PyTest completed successfully"
-
-  playwright:
-    name: E2E Tests (Playwright)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
+          npm ci
+          npm i -D @playwright/test
+          npx playwright install chromium
           
-      - name: Install Playwright
-        run: echo "npm ci && npx playwright install"
-          
-      - name: Run Playwright
+      - name: Run tests for QA
         run: |
-          echo "Running Playwright E2E suites..."
-          sleep 4
-          echo "Playwright completed with some flakes"
+          TEST_ENV=QA npx playwright test tests/website.spec.ts || true
+          TEST_ENV=QA node scripts/process_report.cjs
           
-  puppeteer:
-    name: UI Component Tests (Puppeteer)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-          
-      - name: Run Puppeteer
+      - name: Run tests for UAT
         run: |
-          echo "Running Puppeteer tests..."
-          sleep 2
-          echo "Puppeteer tests completed"
-
-  generate-telemetry-and-deploy:
-    name: Generate Telemetry & Deploy to Pages
-    needs: [pytest, playwright, puppeteer]
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
+          TEST_ENV=UAT npx playwright test tests/website.spec.ts || true
+          TEST_ENV=UAT node scripts/process_report.cjs
           
-      - name: Generate Telemetry Data
+      - name: Run tests for Prod
         run: |
-          node scripts/generate_telemetry.cjs
+          TEST_ENV=Prod npx playwright test tests/website.spec.ts || true
+          TEST_ENV=Prod node scripts/process_report.cjs
           
-      - name: Commit telemetry back to repository (Auto-purging enabled in script)
+      - name: Commit real telemetry
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add public/telemetry_data.json
-          git commit -m "chore: auto-update telemetry data from automated tests [skip ci]" || echo "No changes to commit"
-          git push || echo "Push failed, continuing..."
-
+          git commit -m "chore: auto-update telemetry data from real tests [skip ci]" || echo "No changes"
+          git push || echo "Push failed"
+          
       - name: Setup Pages
         uses: actions/configure-pages@v4
         
-      - name: Install and Build
-        run: |
-          npm ci
-          npm run build
-          
+      - name: Build Dashboard
+        run: npm run build
+        
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
