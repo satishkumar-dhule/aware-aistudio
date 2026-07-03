@@ -6,7 +6,9 @@ on:
 
 permissions:
   actions: write
-  contents: read
+  contents: write
+  pages: write
+  id-token: write
 
 jobs:
   trigger-tests:
@@ -19,8 +21,77 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Triggering QA environment tests..."
-          gh workflow run "Execute Tests" -f environment=QA
+          gh workflow run "execute-tests.yml" -f environment=QA
           echo "Triggering UAT environment tests..."
-          gh workflow run "Execute Tests" -f environment=UAT
+          gh workflow run "execute-tests.yml" -f environment=UAT
           echo "Triggering Prod environment tests..."
-          gh workflow run "Execute Tests" -f environment=Prod
+          gh workflow run "execute-tests.yml" -f environment=Prod
+          
+          echo "Waiting 15 seconds for workflows to initialize..."
+          sleep 15
+          
+          # Find the 3 most recent runs of this workflow
+          RUN_IDS=$(gh run list --workflow "execute-tests.yml" --limit 3 --json databaseId -q '.[].databaseId')
+          
+          for ID in $RUN_IDS; do
+            echo "Waiting for run $ID to complete..."
+            gh run watch $ID --exit-status || echo "Run $ID failed, continuing anyway"
+          done
+          
+          echo "All child workflows finished."
+
+          # Create a directory to download artifacts
+          mkdir -p artifacts
+          for ID in $RUN_IDS; do
+            # Download all artifacts from each run
+            gh run download $ID -D artifacts/ || true
+          done
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Ingest Reports into SQLite
+        run: |
+          for ENV_NAME in QA UAT Prod; do
+             REPORT_DIR="artifacts/playwright-report-${ENV_NAME}"
+             if [ -f "$REPORT_DIR/playwright-report.json" ]; then
+                 echo "Processing $ENV_NAME report..."
+                 TEST_ENV=$ENV_NAME node scripts/process_report_sqlite.cjs "$REPORT_DIR/playwright-report.json"
+             else
+                 echo "No report found for $ENV_NAME"
+             fi
+          done
+
+      - name: Commit and push telemetry
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/telemetry.sqlite
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: auto-update telemetry data from fan-out [skip ci]"
+            git pull --rebase origin main
+            git push origin main
+          fi
+
+      - name: Install dependencies and build
+        run: |
+          npm ci
+          npx vite build --base=/aware-aistudio/
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+        with:
+          enablement: true
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

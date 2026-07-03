@@ -9,10 +9,10 @@ on:
         default: 'QA'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  test-and-deploy:
+  run-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,14 +30,9 @@ jobs:
       - name: Run tests for ${{ inputs.environment }}
         run: |
           TEST_ENV=${{ inputs.environment }} npx playwright test tests/website.spec.ts || true
-          TEST_ENV=${{ inputs.environment }} node scripts/process_report_sqlite.cjs
           
-      - name: Commit real telemetry
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add public/telemetry.sqlite
-          # Fetch and rebase to prevent conflicts when multiple environments run concurrently
-          git pull --rebase origin main || echo "No remote changes"
-          git commit -m "chore: auto-update telemetry data for ${{ inputs.environment }} [skip ci]" || echo "No changes"
-          git push || echo "Push failed"
+      - name: Upload Report Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ inputs.environment }}
+          path: playwright-report.json

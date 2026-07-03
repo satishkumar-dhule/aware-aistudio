@@ -69,7 +69,7 @@
       "specs": [],
       "suites": [
         {
-          "title": "Website Checks for Prod",
+          "title": "Website Checks for QA",
           "file": "website.spec.ts",
           "line": 11,
           "column": 6,
@@ -90,12 +90,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 248,
+                      "duration": 184,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-07-03T05:24:23.243Z",
+                      "startTime": "2026-07-03T07:32:47.145Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -103,7 +103,7 @@
                   "status": "expected"
                 }
               ],
-              "id": "1ac69d5138567e2fe8f3-b04765dd8403e03c0958",
+              "id": "1ac69d5138567e2fe8f3-831d1237d32fd67a1388",
               "file": "website.spec.ts",
               "line": 12,
               "column": 3
@@ -124,12 +124,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 210,
+                      "duration": 171,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-07-03T05:24:23.691Z",
+                      "startTime": "2026-07-03T07:32:47.560Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -137,7 +137,7 @@
                   "status": "expected"
                 }
               ],
-              "id": "1ac69d5138567e2fe8f3-76266fd0d19bf42623df",
+              "id": "1ac69d5138567e2fe8f3-67aadd2c8061fa92cf5e",
               "file": "website.spec.ts",
               "line": 18,
               "column": 3
@@ -158,12 +158,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 125,
+                      "duration": 120,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-07-03T05:24:23.921Z",
+                      "startTime": "2026-07-03T07:32:47.749Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -171,7 +171,7 @@
                   "status": "expected"
                 }
               ],
-              "id": "1ac69d5138567e2fe8f3-cba82e02e5a07934a044",
+              "id": "1ac69d5138567e2fe8f3-42dc510cb3592e24bc4d",
               "file": "website.spec.ts",
               "line": 24,
               "column": 3
@@ -183,8 +183,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-07-03T05:24:22.415Z",
-    "duration": 1700.4339999999997,
+    "startTime": "2026-07-03T07:32:46.310Z",
+    "duration": 1627.229,
     "expected": 3,
     "skipped": 0,
     "unexpected": 0,

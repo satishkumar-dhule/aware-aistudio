@@ -1,17 +1,16 @@
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
-
-const reportPath = path.join(__dirname, '../playwright-report.json');
 const dbPath = path.join(__dirname, '../public/telemetry.sqlite');
 
+const reportPath = process.argv[2] || path.join(__dirname, '../playwright-report.json');
 const envName = process.env.TEST_ENV || 'QA';
 
 let report;
 try {
   report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
 } catch (e) {
-  console.error("Could not read playwright report", e);
+  console.error(`Could not read playwright report at ${reportPath}`, e);
   process.exit(1);
 }
 
@@ -39,7 +38,6 @@ db.exec(`
     suite TEXT,
     hasMemoryAnomaly INTEGER
   );
-
   CREATE TABLE IF NOT EXISTS suites (
     id TEXT PRIMARY KEY,
     name TEXT,
@@ -50,7 +48,6 @@ db.exec(`
     category TEXT,
     heatmapHistory TEXT
   );
-
   CREATE TABLE IF NOT EXISTS testCases (
     id TEXT PRIMARY KEY,
     name TEXT,
@@ -65,7 +62,6 @@ db.exec(`
     stackTrace TEXT,
     FOREIGN KEY(runId) REFERENCES runs(id) ON DELETE CASCADE
   );
-
   CREATE TABLE IF NOT EXISTS anomalies (
     id TEXT PRIMARY KEY,
     type TEXT,
@@ -85,12 +81,13 @@ let passedCount = 0;
 let failedCount = 0;
 let skippedCount = 0;
 let totalDuration = 0;
-const testCases = [];
 
+const testCases = [];
 for (const suite of report.suites || []) {
   for (const s2 of suite.suites || []) {
     for (const spec of s2.specs || []) {
       const testName = spec.title;
+      
       if (!spec.tests || spec.tests.length === 0 || !spec.tests[0].results || spec.tests[0].results.length === 0) {
           skippedCount++;
           continue;
@@ -103,6 +100,7 @@ for (const suite of report.suites || []) {
       
       let errorMsg = null;
       let stackTrace = null;
+      
       if (status === 'Failed') {
         failedCount++;
         errorMsg = testResult.error?.message || 'Test failed';
@@ -130,7 +128,6 @@ for (const suite of report.suites || []) {
 
 const testsCount = passedCount + failedCount + skippedCount;
 const passRate = testsCount > 0 ? Math.round((passedCount / testsCount) * 100) : 0;
-
 const timestamp = new Date().toISOString();
 const durationStr = `${Math.floor(totalDuration / 1000)}s`;
 const statusStr = failedCount > 0 ? 'Failed' : 'Passed';
