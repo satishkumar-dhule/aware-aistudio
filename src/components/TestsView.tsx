@@ -1,5 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Code, Terminal, History, BarChart, Copy, GitCommit, RefreshCw, SlidersHorizontal, ChevronDown, Clock, FolderOpen, Sparkles, ChevronLeft, ChevronRight, Maximize2, Minimize2 } from 'lucide-react';
+import { 
+  Play, 
+  Code, 
+  Terminal, 
+  History, 
+  BarChart, 
+  Copy, 
+  GitCommit, 
+  RefreshCw, 
+  SlidersHorizontal,
+  ChevronDown,
+  Clock,
+  FolderOpen,
+  Sparkles
+} from 'lucide-react';
 import { BrowserDb } from '../lib/browserDb';
 import { TestCase } from '../types';
 
@@ -7,16 +21,15 @@ interface TestsViewProps {
   selectedTestId: string | null;
   searchQuery: string;
   activeEnv: 'All' | 'QA' | 'UAT' | 'PROD';
-
+  onTriggerAi?: (prompt: string) => void;
   onShowToast?: (message: string, type?: 'success' | 'info' | 'error') => void;
 }
 
-export default function TestsView({ selectedTestId, searchQuery, activeEnv, onShowToast }: TestsViewProps) {
+export default function TestsView({ selectedTestId, searchQuery, activeEnv, onTriggerAi, onShowToast }: TestsViewProps) {
   const [testCases, setTestCases] = useState<TestCase[]>(BrowserDb.getTestCases());
   const [selectedTest, setSelectedTest] = useState<TestCase>(BrowserDb.getTestCases()[0]);
   const [activeDetailTab, setActiveDetailTab] = useState<'Error' | 'History' | 'Metrics'>('Error');
   const [currentPage, setCurrentPage] = useState(1);
-  const [isFullScreen, setIsFullScreen] = useState(false);
   const ITEMS_PER_PAGE = 50;
 
   // Synchronize dynamic state from database
@@ -124,13 +137,12 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onSh
   }, [searchQuery, statusFilters, priorityFilters, sortBy, activeEnv, runFilter]);
 
   return (
-    <div className="flex-1 flex overflow-hidden bg-zinc-950 select-none font-sans">
+    <div className="flex-1 flex overflow-hidden bg-[#0c0c0c] select-none font-sans">
       {/* Faceted Filters Left column */}
-      {!isFullScreen && (
-      <aside className="w-[160px] border-r border-zinc-800 bg-zinc-950 flex flex-col shrink-0 overflow-y-auto">
-        <div className="p-3 border-b border-zinc-800 flex justify-between items-center sticky top-0 bg-zinc-950 z-10">
+      <aside className="w-[160px] border-r border-[#222222] bg-[#111111] flex flex-col shrink-0 overflow-y-auto">
+        <div className="p-3 border-b border-[#222222] flex justify-between items-center sticky top-0 bg-[#111111] z-10">
           <h2 className="text-[10px] font-mono uppercase font-bold tracking-widest text-zinc-300">Filters</h2>
-          <button onClick={handleFilterReset} className="text-[9px] font-mono font-bold uppercase text-blue-400 hover:underline">Clear Filters</button>
+          <button onClick={handleFilterReset} className="text-[9px] font-mono font-bold uppercase text-[#4daeff] hover:underline">Clear Filters</button>
         </div>
 
         {/* Filter groups */}
@@ -141,7 +153,7 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onSh
                 <h3 className="text-[10px] font-mono uppercase font-bold tracking-widest text-zinc-500">Active Run</h3>
                 <button onClick={() => setRunFilter(null)} className="text-[9px] font-mono uppercase text-red-400 hover:underline">Clear</button>
               </div>
-              <div className="bg-zinc-800 p-2 rounded border border-zinc-800 text-[10px] font-mono text-zinc-300 truncate">
+              <div className="bg-[#1a1a1a] p-2 rounded border border-[#262626] text-[10px] font-mono text-zinc-300 truncate">
                 {runFilter}
               </div>
             </div>
@@ -156,7 +168,7 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onSh
                     type="checkbox"
                     checked={statusFilters[status]}
                     onChange={() => setStatusFilters(prev => ({ ...prev, [status]: !prev[status] }))}
-                    className="rounded bg-zinc-800 border-zinc-700 text-blue-400 focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5"
+                    className="rounded bg-[#1a1a1a] border-zinc-700 text-[#4daeff] focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5"
                   />
                   <span className="group-hover:text-white transition-colors">{status}</span>
                 </label>
@@ -174,7 +186,7 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onSh
                     type="checkbox"
                     checked={priorityFilters[prio]}
                     onChange={() => setPriorityFilters(prev => ({ ...prev, [prio]: !prev[prio] }))}
-                    className="rounded bg-zinc-800 border-zinc-700 text-blue-400 focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5"
+                    className="rounded bg-[#1a1a1a] border-zinc-700 text-[#4daeff] focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5"
                   />
                   <span className="group-hover:text-white transition-colors">
                     {prio === 'P0' ? 'P0 - Critical' : prio === 'P1' ? 'P1 - High' : 'P2 - Medium'}
@@ -186,12 +198,10 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onSh
         </div>
       </aside>
 
-      )}
       {/* Tests List column */}
-      {!isFullScreen && (
-      <section className="flex-1 flex flex-col border-r border-zinc-800 bg-zinc-950 min-w-[300px]">
+      <section className="flex-1 flex flex-col border-r border-[#262626] bg-[#0c0c0c] min-w-[300px]">
         {/* Toolbar Header */}
-        <div className="p-3 border-b border-zinc-800 flex justify-between items-center bg-zinc-950 sticky top-0 z-10">
+        <div className="p-3 border-b border-[#262626] flex justify-between items-center bg-[#101010] sticky top-0 z-10">
           <span className="text-[10px] font-mono uppercase font-bold text-zinc-500">{filteredTests.length} Results</span>
           <div className="flex items-center gap-1.5 text-xs text-zinc-400 font-mono">
             <span className="text-[10px] uppercase font-bold">Sort:</span>
@@ -218,7 +228,7 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onSh
                 onClick={() => { setSelectedTest(tc); setActiveDetailTab('Error'); }}
                 className={`p-4 flex flex-col gap-2 cursor-pointer transition-all border-l-2 ${
                   isSelected 
-                    ? 'bg-zinc-800 border-l-red-500' 
+                    ? 'bg-[#1a1a1a] border-l-red-500' 
                     : tc.status === 'Failed' 
                     ? 'hover:bg-[#151515] border-l-red-500/30' 
                     : tc.status === 'Flaky'
@@ -228,7 +238,7 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onSh
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-1 min-w-0 pr-3">
-                    <h4 className="font-mono text-xs font-bold text-blue-400 truncate leading-tight">{tc.name}</h4>
+                    <h4 className="font-mono text-xs font-bold text-[#4daeff] truncate leading-tight">{tc.name}</h4>
                     <p className="text-[10px] text-zinc-500 font-mono mt-0.5">{tc.folder}</p>
                   </div>
                   <div className="flex flex-col items-end gap-1.5">
@@ -258,7 +268,7 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onSh
                             ? 'bg-red-500' 
                             : tc.status === 'Flaky' && isFlakyIdx 
                             ? 'bg-amber-500'
-                            : 'bg-zinc-800 hover:bg-blue-500/50'
+                            : 'bg-zinc-800 hover:bg-[#4daeff]/50'
                         }`}
                         style={{ height: `${20 + (i * 8) % 80}%` }}
                       />
@@ -276,11 +286,11 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onSh
 
         {/* Pagination Controls */}
         {totalPages > 1 && (
-          <div className="p-3 border-t border-zinc-800 bg-zinc-950 flex justify-between items-center mt-auto">
+          <div className="p-3 border-t border-[#262626] bg-[#101010] flex justify-between items-center mt-auto">
             <button 
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="px-3 py-1 bg-zinc-800 border border-zinc-800 text-zinc-300 text-xs rounded hover:bg-[#252525] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1 bg-[#1a1a1a] border border-[#262626] text-zinc-300 text-xs rounded hover:bg-[#252525] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Previous
             </button>
@@ -288,7 +298,7 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onSh
             <button 
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="px-3 py-1 bg-zinc-800 border border-zinc-800 text-zinc-300 text-xs rounded hover:bg-[#252525] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1 bg-[#1a1a1a] border border-[#262626] text-zinc-300 text-xs rounded hover:bg-[#252525] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next
             </button>
@@ -297,11 +307,10 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onSh
         </div>
       </section>
 
-      )}
       {/* Right Column: Detail Pane (Comprehensive execution logs, error output, diffs) */}
-      <aside className={`${isFullScreen ? 'flex-1' : 'w-[360px] border-l border-zinc-800'} flex-col h-full bg-zinc-950 flex shrink-0`}>
+      <aside className="w-[360px] flex-col h-full bg-[#101010] flex shrink-0">
         {/* Detail Header */}
-        <div className="p-4 border-b border-zinc-800">
+        <div className="p-4 border-b border-[#262626]">
           {selectedTest ? (
             <>
               <div className="flex justify-between items-start mb-3">
@@ -314,43 +323,13 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onSh
                 }`}>
                   {selectedTest.status}
                 </span>
-                <div className="flex gap-2 items-center">
-                  <div className="flex items-center gap-1 border border-zinc-800 rounded bg-zinc-900 p-0.5">
-                    <button 
-                      onClick={() => {
-                        const idx = filteredTests.findIndex(t => t.id === selectedTest.id);
-                        if (idx > 0) setSelectedTest(filteredTests[idx - 1]);
-                      }}
-                      disabled={!filteredTests || filteredTests.findIndex(t => t.id === selectedTest?.id) <= 0}
-                      className="p-1 text-zinc-500 hover:text-zinc-300 disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      <ChevronLeft size={14} />
-                    </button>
-                    <button 
-                      onClick={() => {
-                        const idx = filteredTests.findIndex(t => t.id === selectedTest.id);
-                        if (idx < filteredTests.length - 1) setSelectedTest(filteredTests[idx + 1]);
-                      }}
-                      disabled={!filteredTests || filteredTests.findIndex(t => t.id === selectedTest?.id) >= filteredTests.length - 1}
-                      className="p-1 text-zinc-500 hover:text-zinc-300 disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      <ChevronRight size={14} />
-                    </button>
-                  </div>
-                  
-                  <button 
-                    onClick={() => setIsFullScreen(!isFullScreen)}
-                    className="p-1 border border-zinc-800 rounded hover:border-zinc-700 text-zinc-400 hover:text-zinc-200 bg-zinc-900 transition-colors"
-                    title="Toggle Full Screen"
-                  >
-                    {isFullScreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-                  </button>
+                <div className="flex gap-2">
                   <button 
                     onClick={() => {
                       navigator.clipboard.writeText(`${selectedTest.folder}/${selectedTest.name}`);
                       if (onShowToast) onShowToast("Simulation: Source code file path copied to clipboard!", "success");
                     }}
-                    className="px-2.5 py-1 border border-zinc-800 rounded text-[10px] font-mono uppercase font-bold hover:border-blue-500 text-zinc-300 hover:text-blue-400 bg-transparent flex items-center gap-1 transition-colors"
+                    className="px-2.5 py-1 border border-[#262626] rounded text-[10px] font-mono uppercase font-bold hover:border-[#4daeff] text-zinc-300 hover:text-[#4daeff] bg-transparent flex items-center gap-1 transition-colors"
                   >
                     <Code size={11} /> Code
                   </button>
@@ -364,7 +343,7 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onSh
                 <span className="flex items-center gap-1 leading-none" title="Execution Duration"><Clock size={12} /> {selectedTest.duration}</span>
                 <span className="flex items-center gap-1 leading-none" title="Pipeline Run ID">
                   <span className="text-[10px] uppercase font-bold text-zinc-600">RUN:</span>
-                  <span className="text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20">{selectedTest.runId}</span>
+                  <span className="text-[#4daeff] bg-[#4daeff]/10 px-1.5 py-0.5 rounded border border-[#4daeff]/20">{selectedTest.runId}</span>
                 </span>
               </div>
             </>
@@ -374,25 +353,25 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onSh
         </div>
 
         {/* Tab Selection */}
-        <div className="flex border-b border-zinc-800 bg-zinc-950">
+        <div className="flex border-b border-[#262626] bg-[#0d0d0d]">
           {(['Error', 'History', 'Metrics'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveDetailTab(tab)}
               className={`px-4 py-2.5 font-mono text-[9px] uppercase font-bold tracking-wider relative transition-colors ${
-                activeDetailTab === tab ? 'text-blue-400' : 'text-zinc-500 hover:text-zinc-300'
+                activeDetailTab === tab ? 'text-[#4daeff]' : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
               {tab === 'Error' ? 'Error Output' : tab}
               {activeDetailTab === tab && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#4daeff]" />
               )}
             </button>
           ))}
         </div>
 
         {/* Content Container */}
-        <div className="flex-1 overflow-y-auto p-4 bg-zinc-950 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 bg-[#0d0d0d] space-y-4">
           {selectedTest && activeDetailTab === 'Error' && (
             <>
               {selectedTest.errorMsg ? (
@@ -415,12 +394,22 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onSh
                       </pre>
                     </div>
 
+                    {onTriggerAi && (
+                      <button
+                        onClick={() => {
+                          onTriggerAi(`Review failed test case "${selectedTest.name}" in folder "${selectedTest.folder}". Error: "${selectedTest.errorMsg}". Stacktrace:\n${selectedTest.stackTrace || 'No stack trace captured.'}\n\nPlease isolate the root cause, recommend fix modifications, and outline a resolution pipeline.`);
+                        }}
+                        className="py-1.5 bg-[#4daeff]/10 hover:bg-[#4daeff]/20 border border-[#4daeff]/30 hover:border-[#4daeff]/50 text-[#4daeff] text-[10px] font-mono font-bold rounded uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+                      >
+                        <Sparkles size={12} /> Diagnose with Google Chrome AI
+                      </button>
+                    )}
                   </div>
 
                   {/* Simplified Git Diff Panel */}
                   {selectedTest.diff && (
-                    <div className="border border-zinc-800 bg-zinc-950 rounded overflow-hidden">
-                      <div className="px-3 py-1.5 border-b border-zinc-800 bg-zinc-900 text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-widest">
+                    <div className="border border-[#262626] bg-[#101010] rounded overflow-hidden">
+                      <div className="px-3 py-1.5 border-b border-[#262626] bg-[#141414] text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-widest">
                         Object Diff
                       </div>
                       <div className="p-3 font-mono text-[10px] leading-relaxed select-all">
@@ -428,8 +417,8 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onSh
                         <div className="text-zinc-400">&nbsp;&nbsp;"id": "usr_12345",</div>
                         <div className="text-zinc-400">&nbsp;&nbsp;"email": "test@example.com",</div>
                         <div className="bg-red-500/15 text-red-400 px-1 border-l-2 border-l-red-500">&nbsp;&nbsp;- "status": "pending"</div>
-                        <div className="bg-green-500/15 text-green-500 px-1 border-l-2 border-l-[#4caf50]">&nbsp;&nbsp;+ "status": "active"</div>
-                        <div className="bg-green-500/15 text-green-500 px-1 border-l-2 border-l-[#4caf50]">&nbsp;&nbsp;+ "token": "ey..."</div>
+                        <div className="bg-[#4caf50]/15 text-[#4caf50] px-1 border-l-2 border-l-[#4caf50]">&nbsp;&nbsp;+ "status": "active"</div>
+                        <div className="bg-[#4caf50]/15 text-[#4caf50] px-1 border-l-2 border-l-[#4caf50]">&nbsp;&nbsp;+ "token": "ey..."</div>
                         <div className="text-zinc-500">{"}"}</div>
                       </div>
                     </div>
@@ -442,22 +431,22 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onSh
               )}
 
               {/* Execution Context table data */}
-              <div className="border border-zinc-800 bg-zinc-950 rounded overflow-hidden">
-                <div className="px-3 py-1.5 border-b border-zinc-800 bg-zinc-900 text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-widest">
+              <div className="border border-[#262626] bg-[#101010] rounded overflow-hidden">
+                <div className="px-3 py-1.5 border-b border-[#262626] bg-[#141414] text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-widest">
                   Execution Context
                 </div>
                 <div className="divide-y divide-[#262626]">
                   <div className="flex text-xs">
-                    <div className="w-1/3 p-2.5 border-r border-zinc-800 font-mono text-[10px] text-zinc-500 uppercase font-semibold">Environment</div>
+                    <div className="w-1/3 p-2.5 border-r border-[#262626] font-mono text-[10px] text-zinc-500 uppercase font-semibold">Environment</div>
                     <div className="w-2/3 p-2.5 font-mono text-zinc-300">staging-eu-west</div>
                   </div>
                   <div className="flex text-xs">
-                    <div className="w-1/3 p-2.5 border-r border-zinc-800 font-mono text-[10px] text-zinc-500 uppercase font-semibold">Worker ID</div>
+                    <div className="w-1/3 p-2.5 border-r border-[#262626] font-mono text-[10px] text-zinc-500 uppercase font-semibold">Worker ID</div>
                     <div className="w-2/3 p-2.5 font-mono text-zinc-300">wrk-9876x</div>
                   </div>
                   <div className="flex text-xs">
-                    <div className="w-1/3 p-2.5 border-r border-zinc-800 font-mono text-[10px] text-zinc-500 uppercase font-semibold">Commit Hash</div>
-                    <div className="w-2/3 p-2.5 font-mono text-blue-400 flex items-center gap-1 cursor-pointer hover:underline" onClick={() => onShowToast?.("Redirecting to git commit diff on origin branch...", "info")}>
+                    <div className="w-1/3 p-2.5 border-r border-[#262626] font-mono text-[10px] text-zinc-500 uppercase font-semibold">Commit Hash</div>
+                    <div className="w-2/3 p-2.5 font-mono text-[#4daeff] flex items-center gap-1 cursor-pointer hover:underline" onClick={() => onShowToast?.("Redirecting to git commit diff on origin branch...", "info")}>
                       <GitCommit size={12} /> a1b2c3d4
                     </div>
                   </div>
@@ -471,15 +460,15 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onSh
               <h3 className="text-[10px] font-mono uppercase font-bold tracking-widest text-zinc-500">Historical Execution Logs</h3>
               <div className="space-y-2">
                 {selectedTest.history?.map((h, index) => (
-                  <div key={index} className="p-3 bg-zinc-900 border border-zinc-800 rounded flex justify-between items-center text-xs">
+                  <div key={index} className="p-3 bg-[#121212] border border-[#262626] rounded flex justify-between items-center text-xs">
                     <div>
-                      <span className="font-mono text-blue-400 font-bold block">{h.runId}</span>
+                      <span className="font-mono text-[#4daeff] font-bold block">{h.runId}</span>
                       <span className="text-[10px] text-zinc-500 font-mono mt-0.5">{h.timestamp}</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="font-mono text-zinc-400">{h.duration}</span>
                       <span className={`text-[9px] font-mono uppercase font-bold border px-1.5 py-0.5 rounded ${
-                        h.status === 'Passed' ? 'bg-green-500/15 text-green-500 border-green-500/20' : 'bg-red-500/15 text-red-400 border-red-500/20'
+                        h.status === 'Passed' ? 'bg-[#4caf50]/15 text-[#4caf50] border-[#4caf50]/20' : 'bg-red-500/15 text-red-400 border-red-500/20'
                       }`}>
                         {h.status}
                       </span>
@@ -494,13 +483,13 @@ export default function TestsView({ selectedTestId, searchQuery, activeEnv, onSh
             <div className="space-y-4">
               <h3 className="text-[10px] font-mono uppercase font-bold tracking-widest text-zinc-500">Telemetry Performance Metrics</h3>
               
-              <div className="bg-zinc-900 border border-zinc-800 p-4 rounded text-center">
+              <div className="bg-[#121212] border border-[#262626] p-4 rounded text-center">
                 <span className="text-[10px] font-mono text-zinc-500 uppercase block mb-1">Average Execution Speed</span>
                 <span className="font-mono text-2xl font-bold text-white">{selectedTest.duration}</span>
                 <p className="text-[10px] text-zinc-500 mt-2">Steady execution speed over the last 14 testing pipeline evaluations.</p>
               </div>
 
-              <div className="bg-zinc-900 border border-zinc-800 p-4 rounded text-center">
+              <div className="bg-[#121212] border border-[#262626] p-4 rounded text-center">
                 <span className="text-[10px] font-mono text-zinc-500 uppercase block mb-1">Failure / Flake rate (30D)</span>
                 <span className="font-mono text-2xl font-bold text-red-400">{selectedTest.status === 'Passed' ? '0%' : '14.2%'}</span>
                 <p className="text-[10px] text-zinc-500 mt-2">Evaluation indicates standard regression risk threshold limit status.</p>

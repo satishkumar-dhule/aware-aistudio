@@ -64,7 +64,8 @@ export class BrowserDb {
     if (cachedRuns) return cachedRuns;
     try {
       const data = localStorage.getItem(RUNS_KEY);
-      cachedRuns = data ? JSON.parse(data) : [];
+      const parsed = data ? JSON.parse(data) : [];
+      cachedRuns = Array.isArray(parsed) ? parsed.filter(Boolean) : [];
       return cachedRuns;
     } catch {
       return [];
@@ -85,7 +86,8 @@ export class BrowserDb {
     if (cachedTestCases) return cachedTestCases;
     try {
       const data = localStorage.getItem(TEST_CASES_KEY);
-      cachedTestCases = data ? JSON.parse(data) : [];
+      const parsed = data ? JSON.parse(data) : [];
+      cachedTestCases = Array.isArray(parsed) ? parsed.filter(Boolean) : [];
       return cachedTestCases;
     } catch {
       return [];
@@ -106,7 +108,8 @@ export class BrowserDb {
     if (cachedSuites) return cachedSuites;
     try {
       const data = localStorage.getItem(SUITES_KEY);
-      cachedSuites = data ? JSON.parse(data) : [];
+      const parsed = data ? JSON.parse(data) : [];
+      cachedSuites = Array.isArray(parsed) ? parsed.filter(Boolean) : [];
       return cachedSuites;
     } catch {
       return [];
@@ -127,7 +130,8 @@ export class BrowserDb {
     if (cachedAnomalies) return cachedAnomalies;
     try {
       const data = localStorage.getItem(ANOMALIES_KEY);
-      cachedAnomalies = data ? JSON.parse(data) : [];
+      const parsed = data ? JSON.parse(data) : [];
+      cachedAnomalies = Array.isArray(parsed) ? parsed.filter(Boolean) : [];
       return cachedAnomalies;
     } catch {
       return [];
@@ -354,19 +358,19 @@ export class BrowserDb {
     const flakyRuns = runs.filter(r => r.status === 'Flaky').length;
 
     // Overall Average Pass Rate across non-empty cycles
-    const activeRunsWithTests = runs.filter(r => r.testsCount > 0);
+    const activeRunsWithTests = runs.filter(r => (r?.testsCount ?? 0) > 0);
     const avgPassRate = activeRunsWithTests.length > 0 
-      ? Math.round(activeRunsWithTests.reduce((sum, r) => sum + r.passRate, 0) / activeRunsWithTests.length) 
+      ? Math.round(activeRunsWithTests.reduce((sum, r) => sum + (r?.passRate ?? 0), 0) / activeRunsWithTests.length) 
       : 100;
 
     // Environment specific breakdown
-    const qaRuns = runs.filter(r => r.environment === 'QA');
-    const uatRuns = runs.filter(r => r.environment === 'UAT');
-    const prodRuns = runs.filter(r => r.environment === 'Prod');
+    const qaRuns = runs.filter(r => r?.environment === 'QA');
+    const uatRuns = runs.filter(r => r?.environment === 'UAT');
+    const prodRuns = runs.filter(r => r?.environment === 'Prod' || r?.environment === 'PROD');
 
-    const qaAvg = qaRuns.length > 0 ? Math.round(qaRuns.reduce((s, r) => s + r.passRate, 0) / qaRuns.length) : 0;
-    const uatAvg = uatRuns.length > 0 ? Math.round(uatRuns.reduce((s, r) => s + r.passRate, 0) / uatRuns.length) : 0;
-    const prodAvg = prodRuns.length > 0 ? Math.round(prodRuns.reduce((s, r) => s + r.passRate, 0) / prodRuns.length) : 0;
+    const qaAvg = qaRuns.length > 0 ? Math.round(qaRuns.reduce((s, r) => s + (r?.passRate ?? 0), 0) / qaRuns.length) : 0;
+    const uatAvg = uatRuns.length > 0 ? Math.round(uatRuns.reduce((s, r) => s + (r?.passRate ?? 0), 0) / uatRuns.length) : 0;
+    const prodAvg = prodRuns.length > 0 ? Math.round(prodRuns.reduce((s, r) => s + (r?.passRate ?? 0), 0) / prodRuns.length) : 0;
 
     // Failure reasons index distribution
     const failureCategories: Record<string, number> = {};
@@ -395,142 +399,70 @@ export class BrowserDb {
   }
 
   // 7. Simulated Run Generator (Preserved + Enhanced)
-  static addRandomSimulatedRun(): Run {
-    const runs = this.getRuns();
-    const testCases = this.getTestCases();
-    
-    let runNum = Math.floor(1000 + Math.random() * 9000);
-    let id = `RUN-${runNum}-SIM`;
-    while (runs.some(r => r.id === id) || testCases.some(t => t.id === `sim_test_login_${runNum}`)) {
-      runNum = Math.floor(1000 + Math.random() * 9000);
-      id = `RUN-${runNum}-SIM`;
-    }
-    const envs: ('Prod' | 'UAT' | 'QA')[] = ['Prod', 'UAT', 'QA'];
-    const chosenEnv = envs[Math.floor(Math.random() * envs.length)];
-    const suites: ('Smoke' | 'Security' | 'Regression' | 'Performance')[] = ['Smoke', 'Security', 'Regression', 'Performance'];
-    const chosenSuite = suites[Math.floor(Math.random() * suites.length)];
-    
-    const passedPercent = Math.floor(75 + Math.random() * 25);
-    const isPassed = passedPercent >= 90;
-    
-    const testsCount = 500;
-    const failedCount = Math.round(testsCount * ((100 - passedPercent) / 100));
-    const passedCount = testsCount - failedCount;
-    
-    const newRun: Run = {
-      id,
-      name: `${chosenSuite}_Simulated_Cycle_${runNum}`,
-      branch: 'main',
-      status: isPassed ? 'Passed' : 'Failed',
-      environment: chosenEnv,
-      duration: `${Math.floor(1 + Math.random() * 8)}m ${Math.floor(Math.random() * 60)}s`,
-      timestamp: 'Just now',
-      passRate: passedPercent,
-      triggeredBy: 'GitHub Actions',
-      commit: `sim-${runNum}`,
-      testsCount: testsCount,
-      passedCount: passedCount,
-      skippedCount: 0,
-      failedCount: failedCount,
-      suite: chosenSuite,
-      hasMemoryAnomaly: Math.random() > 0.7,
-    };
+  static async fetchLatestTestResults() {
+    try {
+      const res = await fetch('test_results.json?t=' + new Date().getTime());
+      if (!res.ok) {
+          console.warn("Could not fetch test_results.json. Ensure python tests are run.");
+          return null;
+      }
+      const data = await res.json();
+      
+      const runs = this.getRuns();
+      const testCases = this.getTestCases();
 
-    runs.unshift(newRun);
-    this.saveRuns(runs);
-
-    // Create 500 test cases for this run
-    const newTestCases: TestCase[] = Array.from({ length: testsCount }).map((_, i) => {
-      const isFailedTC = i < failedCount;
-      return {
-        id: `sim_test_${runNum}_${i}`,
-        name: `module_${Math.floor(i / 10)}.spec.ts: Subtest ${i} [Sim ${runNum}]`,
-        suiteId: 'prd-smk-01',
-        runId: id,
-        folder: `src/tests/module_${Math.floor(i / 10)}`,
-        status: isFailedTC ? 'Failed' as const : 'Passed' as const,
-        duration: `${Math.floor(Math.random() * 100)}ms`,
-        tag: i % 2 === 0 ? 'api' : 'ui',
-        priority: i % 10 === 0 ? 'P0 - Critical' : 'P1 - High',
-        errorMsg: isFailedTC ? 'AssertionError: expected value to equal true' : undefined,
-        stackTrace: isFailedTC ? 'at test.spec.ts:89\nat processTicksAndRejections' : undefined,
+      if (runs.some(r => r.id === data.id)) {
+          return null; // Already imported
+      }
+      
+      const newRun: Run = {
+        id: data.id || `RUN-${Date.now()}`,
+        name: data.name || 'Unknown Run',
+        branch: 'main',
+        status: (data.passRate ?? 0) >= 90 ? 'Passed' : 'Failed',
+        environment: data.environment || 'PROD',
+        duration: data.duration || '0s',
+        timestamp: data.timestamp || new Date().toISOString(),
+        passRate: data.passRate ?? 0,
+        triggeredBy: 'Manual Python Runner',
+        commit: 'actual-run',
+        testsCount: data.testsCount ?? 0,
+        passedCount: data.passedCount ?? 0,
+        skippedCount: 0,
+        failedCount: data.failedCount ?? 0,
+        suite: 'Akamai Suite',
+        hasMemoryAnomaly: false
       };
-    });
-
-    const updatedTCs = [...newTestCases, ...testCases];
-    this.saveTestCases(updatedTCs);
-
-    return newRun;
+      
+      runs.unshift(newRun);
+      this.saveRuns(runs);
+      
+      const newTestCases: TestCase[] = data.tests.map((t: any) => ({
+        id: t.id,
+        name: t.name,
+        suiteId: 'akamai-prod',
+        runId: data.id,
+        folder: 'tests/',
+        status: t.status === 'passed' ? 'Passed' : 'Failed',
+        duration: t.duration + 'ms',
+        tag: t.priority === 'High' ? 'ui' : 'api',
+        priority: t.priority,
+        errorMsg: t.errorMsg,
+        stackTrace: undefined
+      }));
+      
+      const updatedTCs = [...newTestCases, ...testCases];
+      this.saveTestCases(updatedTCs);
+      
+      return newRun;
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
   }
 
-  // 8. Trigger Scheduled GitHub Actions (Preserved + Enhanced)
+  // 8. Legacy action removed
   static triggerScheduledGitHubActions(): Run[] {
-    const runs = this.getRuns();
-    const testCases = this.getTestCases();
-    
-    let runNum = Math.floor(5000 + Math.random() * 5000);
-    while (runs.some(r => r.id.includes(String(runNum)))) {
-      runNum = Math.floor(5000 + Math.random() * 5000);
-    }
-    const envs: ('Prod' | 'UAT' | 'QA')[] = ['QA', 'UAT', 'Prod'];
-    const suites: ('Smoke' | 'Security' | 'Regression' | 'Performance')[] = ['Smoke', 'Regression', 'Security'];
-    
-    const newRunsList: Run[] = [];
-    const newTestCasesList: TestCase[] = [];
-
-    envs.forEach((env, index) => {
-      const suiteName = suites[index % suites.length];
-      const runId = `GH-SCHED-${runNum}-${env.toUpperCase()}`;
-      const passedPercent = env === 'UAT' ? 100 : Math.floor(80 + Math.random() * 20);
-      const isPassed = passedPercent >= 90;
-
-      const newRun: Run = {
-        id: runId,
-        name: `Scheduled_GH_Actions_${suiteName}_${runNum}`,
-        branch: 'main',
-        status: isPassed ? 'Passed' : 'Failed',
-        environment: env,
-        duration: `${Math.floor(2 + Math.random() * 5)}m ${Math.floor(Math.random() * 60)}s`,
-        timestamp: 'Just now',
-        passRate: passedPercent,
-        triggeredBy: 'GitHub Actions (Schedule)',
-        commit: `gh-sched-${runNum}`,
-        testsCount: 120,
-        passedCount: Math.round((passedPercent / 100) * 120),
-        skippedCount: 0,
-        failedCount: 120 - Math.round((passedPercent / 100) * 120),
-        suite: suiteName,
-        hasMemoryAnomaly: env === 'Prod' && Math.random() > 0.5,
-      };
-
-      newRunsList.push(newRun);
-
-// Create specific tests for this environment
-      const envTests = Array.from({ length: 120 }).map((_, i) => {
-        const isFailedTC = i < newRun.failedCount;
-        return {
-          id: `gh_test_${env.toLowerCase()}_${runNum}_${i}`,
-          name: `module_${Math.floor(i / 10)}.spec.ts: Subtest ${i} [Sched ${runNum}]`,
-          suiteId: suiteName,
-          runId: runId,
-          folder: `test/gh-workflows/${env.toLowerCase()}`,
-          status: isFailedTC ? 'Failed' as const : 'Passed' as const,
-          duration: `${Math.floor(100 + Math.random() * 800)}ms`,
-          tag: i % 3 === 0 ? 'api' : 'e2e',
-          priority: isFailedTC ? 'P1 - High' : 'P2 - Medium',
-          errorMsg: isFailedTC ? `AssertionError: Expected 200 OK from ${env} environment gateway, got 504 Gateway Timeout` : undefined,
-          stackTrace: isFailedTC ? `at test/gh-workflows/api.spec.ts:54\nat processTicksAndRejections\nat github-actions-runner-node` : undefined,
-        };
-      });
-      newTestCasesList.push(...envTests);
-    });
-
-    const updatedRuns = [...newRunsList, ...runs];
-    this.saveRuns(updatedRuns);
-
-    const updatedTCs = [...newTestCasesList, ...testCases];
-    this.saveTestCases(updatedTCs);
-
-    return newRunsList;
+    return [];
   }
 }

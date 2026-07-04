@@ -69,9 +69,9 @@
       "specs": [],
       "suites": [
         {
-          "title": "Website Checks for QA",
+          "title": "Website Checks for Prod",
           "file": "website.spec.ts",
-          "line": 6,
+          "line": 11,
           "column": 6,
           "specs": [
             {
@@ -90,12 +90,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1169,
+                      "duration": 248,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-07-03T07:53:53.131Z",
+                      "startTime": "2026-07-03T05:24:23.243Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -103,13 +103,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "1ac69d5138567e2fe8f3-831d1237d32fd67a1388",
+              "id": "1ac69d5138567e2fe8f3-b04765dd8403e03c0958",
               "file": "website.spec.ts",
-              "line": 7,
+              "line": 12,
               "column": 3
             },
             {
-              "title": "Has search input",
+              "title": "Has expected domain text",
               "ok": true,
               "tags": [],
               "tests": [
@@ -124,12 +124,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 895,
+                      "duration": 210,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-07-03T07:53:54.577Z",
+                      "startTime": "2026-07-03T05:24:23.691Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -137,9 +137,9 @@
                   "status": "expected"
                 }
               ],
-              "id": "1ac69d5138567e2fe8f3-f8ba7f093b22961effc6",
+              "id": "1ac69d5138567e2fe8f3-76266fd0d19bf42623df",
               "file": "website.spec.ts",
-              "line": 13,
+              "line": 18,
               "column": 3
             },
             {
@@ -158,12 +158,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 907,
+                      "duration": 125,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-07-03T07:53:55.501Z",
+                      "startTime": "2026-07-03T05:24:23.921Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -171,9 +171,9 @@
                   "status": "expected"
                 }
               ],
-              "id": "1ac69d5138567e2fe8f3-42dc510cb3592e24bc4d",
+              "id": "1ac69d5138567e2fe8f3-cba82e02e5a07934a044",
               "file": "website.spec.ts",
-              "line": 19,
+              "line": 24,
               "column": 3
             }
           ]
@@ -183,8 +183,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-07-03T07:53:52.141Z",
-    "duration": 4370.562,
+    "startTime": "2026-07-03T05:24:22.415Z",
+    "duration": 1700.4339999999997,
     "expected": 3,
     "skipped": 0,
     "unexpected": 0,

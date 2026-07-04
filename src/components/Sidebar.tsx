@@ -6,9 +6,11 @@ import {
   CheckSquare, 
   Folder, 
   BarChart3, 
-  Settings,
-  GitCompare,
-  Activity
+  Settings, 
+  BookOpen, 
+  HelpCircle,
+  Eye,
+  GitCompare
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -28,30 +30,40 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   ];
 
   return (
-    <aside className="w-[180px] bg-zinc-950 border-r border-zinc-900 flex flex-col h-full py-4 select-none shrink-0">
-      <div className="px-4 mb-8 flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-          <Activity size={18} className="stroke-[2.5]" />
+    <aside className="w-[160px] bg-[#111111] border-r border-[#222222] flex flex-col h-full py-3 select-none shrink-0">
+      {/* Brand Header */}
+      <div className="px-3 mb-4 flex items-center gap-2">
+        <div className="w-7 h-7 rounded bg-[#4daeff]/10 border border-[#4daeff]/30 flex items-center justify-center text-[#4daeff]">
+          <Eye size={16} className="stroke-[2.5]" />
         </div>
-        <h1 className="font-sans text-sm font-bold text-zinc-100 leading-none tracking-tight">Test Runs</h1>
+        <div>
+          <h1 className="font-sans text-base font-bold text-[#4daeff] leading-none tracking-tight">AWARE</h1>
+          <p className="font-mono text-[9px] text-zinc-500 uppercase mt-0.5 tracking-widest font-semibold">Observability</p>
+        </div>
       </div>
-      
-      <nav className="flex-1 flex flex-col gap-1 px-2">
+
+      {/* Nav Menu Items */}
+      <nav className="flex-1 px-2 space-y-0.5">
         {navItems.map((item) => {
-          const isActive = activeTab === item.id;
           const Icon = item.icon;
+          const isActive = activeTab === item.id;
           return (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`flex items-center gap-3 px-3 py-2 rounded-md font-sans text-xs font-medium transition-colors w-full text-left ${
-                isActive 
-                  ? 'bg-zinc-800 text-zinc-100' 
-                  : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200'
+              className={`w-full flex items-center gap-2 px-2.5 py-2 rounded text-xs font-medium transition-all text-left group ${
+                isActive
+                  ? 'bg-[#1a1a1a] text-[#4daeff] border-l-2 border-[#4daeff]'
+                  : 'text-zinc-400 hover:bg-[#1a1a1a]/50 hover:text-white'
               }`}
             >
-              <Icon size={16} className={isActive ? 'text-blue-400' : 'text-zinc-500'} />
-              {item.label}
+              <Icon 
+                size={15} 
+                className={`transition-transform duration-150 group-hover:scale-105 ${
+                  isActive ? 'text-[#4daeff]' : 'text-zinc-500 group-hover:text-zinc-300'
+                }`} 
+              />
+              <span className="font-sans">{item.label}</span>
             </button>
           );
         })}

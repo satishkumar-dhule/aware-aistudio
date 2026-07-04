@@ -1,0 +1,130 @@
+name: "Environment Test Pipeline"
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test-environments:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [QA, UAT, PROD]
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Run Python Tests against Akamai
+        env:
+          TEST_ENV: ${{ matrix.environment }}
+        run: |
+          mkdir -p public db logs
+          export TEST_ENV=$TEST_ENV
+          
+          echo "Executing tests for environment: $TEST_ENV"
+          python tests/test_akamai.py || echo "Tests completed with some failures"
+
+      - name: Capture Results to SQLite & Handle Error Logging
+        env:
+          TEST_ENV: ${{ matrix.environment }}
+        run: |
+          cat << 'EOF' > ingest_sqlite.py
+          import sqlite3
+          import json
+          import os
+          import sys
+          import logging
+          
+          # Setup proper error logging to prevent malformed disk images and diagnose issues
+          logging.basicConfig(
+              filename='logs/db_ingest.log',
+              level=logging.ERROR,
+              format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+          )
+          
+          env = os.environ.get('TEST_ENV', 'PROD')
+          json_file = 'public/test_results.json'
+          db_file = 'db/test_results.db'
+          
+          try:
+              if not os.path.exists(json_file):
+                  print(f"No results found for {env}")
+                  sys.exit(0)
+                  
+              with open(json_file, 'r') as f:
+                  data = json.load(f)
+                  
+              # Connect securely with timeout to prevent locking/malformed image errors
+              conn = sqlite3.connect(db_file, timeout=30.0)
+              
+              # Use write-ahead logging to prevent database locking issues in concurrent CI runs
+              conn.execute('PRAGMA journal_mode=WAL;')
+              
+              cursor = conn.cursor()
+              cursor.execute('''
+                  CREATE TABLE IF NOT EXISTS test_runs (
+                      id TEXT PRIMARY KEY,
+                      name TEXT,
+                      environment TEXT,
+                      timestamp TEXT,
+                      pass_rate INTEGER,
+                      tests_count INTEGER,
+                      passed_count INTEGER,
+                      failed_count INTEGER,
+                      duration TEXT,
+                      raw_json TEXT
+                  )
+              ''')
+              
+              cursor.execute('''
+                  INSERT OR REPLACE INTO test_runs 
+                  (id, name, environment, timestamp, pass_rate, tests_count, passed_count, failed_count, duration, raw_json)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              ''', (
+                  data.get('id'),
+                  data.get('name'),
+                  env,
+                  data.get('timestamp'),
+                  data.get('passRate'),
+                  data.get('testsCount'),
+                  data.get('passedCount'),
+                  data.get('failedCount'),
+                  data.get('duration'),
+                  json.dumps(data)
+              ))
+              
+              conn.commit()
+              conn.close()
+              print(f"Successfully ingested {env} results into SQLite WAL database.")
+              
+          except sqlite3.DatabaseError as db_err:
+              # Catch specific DB errors like 'database disk image is malformed'
+              logging.error(f"SQLite DatabaseError [{env}]: {db_err}")
+              sys.exit(1)
+          except Exception as e:
+              logging.error(f"General Error [{env}]: {e}")
+              sys.exit(1)
+          EOF
+          
+          python ingest_sqlite.py
+
+      - name: Upload Database and Logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sqlite-db-${{ matrix.environment }}
+          path: |
+            db/test_results.db
+            logs/db_ingest.log
+          retention-days: 7

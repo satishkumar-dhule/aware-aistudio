@@ -1,0 +1,45 @@
+{
+  "id": "RUN-AKAMAI-PROD-5ef82d0a",
+  "name": "Akamai PROD Tests",
+  "environment": "PROD",
+  "timestamp": "2026-07-04T02:22:27Z",
+  "passRate": 0,
+  "testsCount": 4,
+  "passedCount": 0,
+  "failedCount": 4,
+  "duration": "2.48s",
+  "tests": [
+    {
+      "id": "917321e0-4892-4403-9751-6d6d1bd06a4f",
+      "name": "test_404_page",
+      "status": "failed",
+      "duration": 636.92,
+      "errorMsg": "403 != 404",
+      "priority": "High"
+    },
+    {
+      "id": "44beb509-2c92-433f-8165-34c642da9b77",
+      "name": "test_homepage_loads",
+      "status": "failed",
+      "duration": 617.69,
+      "errorMsg": "HTTP Error 403: Forbidden",
+      "priority": "High"
+    },
+    {
+      "id": "b19405d0-8011-4751-9308-f18e1798d707",
+      "name": "test_performance_latency",
+      "status": "failed",
+      "duration": 602.92,
+      "errorMsg": "HTTP Error 403: Forbidden",
+      "priority": "High"
+    },
+    {
+      "id": "a9cddb0c-ac94-4c9b-a1fa-7dda0c58044c",
+      "name": "test_security_headers",
+      "status": "failed",
+      "duration": 623.5,
+      "errorMsg": "HTTP Error 403: Forbidden",
+      "priority": "High"
+    }
+  ]
+}

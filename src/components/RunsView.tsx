@@ -10,27 +10,28 @@ import {
   Search, 
   SlidersHorizontal,
   ChevronRight,
+  ChevronLeft,
+  Maximize2,
+  Minimize2,
   RefreshCw,
   User,
   GitBranch,
   FolderDot,
-  Sparkles,
-  Maximize2
+  Sparkles
 } from 'lucide-react';
 import { BrowserDb } from '../lib/browserDb';
 import { Run, TestCase } from '../types';
-import TestCaseModal from './TestCaseModal';
 
 interface RunsViewProps {
   searchQuery: string;
   onRefreshData?: () => void;
   onSelectTest: (testId: string) => void;
   activeEnv: 'All' | 'QA' | 'UAT' | 'PROD';
-
+  onTriggerAi?: (prompt: string) => void;
   onShowToast?: (message: string, type?: 'success' | 'info' | 'error') => void;
 }
 
-export default function RunsView({ searchQuery, onRefreshData, onSelectTest, activeEnv, onShowToast }: RunsViewProps) {
+export default function RunsView({ searchQuery, onRefreshData, onSelectTest, activeEnv, onTriggerAi, onShowToast }: RunsViewProps) {
   const [runs, setRuns] = useState<Run[]>(BrowserDb.getRuns());
   const [selectedRun, setSelectedRun] = useState<Run>(BrowserDb.getRuns()[1] || BrowserDb.getRuns()[0]);
   const [runTestCases, setRunTestCases] = useState<TestCase[]>(() => {
@@ -39,7 +40,7 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
   });
   const [activeTab, setActiveTab] = useState<'Summary' | 'Results' | 'Logs'>('Summary');
   const [currentPage, setCurrentPage] = useState(1);
-  const [modalTestCaseId, setModalTestCaseId] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const ITEMS_PER_PAGE = 25;
 
   // Synchronize with database updates
@@ -151,9 +152,9 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
       return matchesSearch && matchesStatus && matchesEnv && matchesSuite;
     }).sort((a, b) => {
       if (sortBy === 'Duration') {
-        return b.duration.localeCompare(a.duration);
+        return (b.duration || '').localeCompare(a.duration || '');
       } else if (sortBy === 'Pass Rate') {
-        return b.passRate - a.passRate;
+        return (b.passRate ?? 0) - (a.passRate ?? 0);
       }
       return b.id.localeCompare(a.id); // Default Latest sort
     });
@@ -171,10 +172,10 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
 
   const getStatusIcon = (status: Run['status'], size = 16) => {
     switch (status) {
-      case 'Passed': return <CheckCircle size={size} className="text-green-500" />;
+      case 'Passed': return <CheckCircle size={size} className="text-[#4caf50]" />;
       case 'Failed': return <XCircle size={size} className="text-red-500" />;
       case 'Flaky': return <AlertTriangle size={size} className="text-amber-500" />;
-      default: return <RefreshCw size={size} className="text-blue-400 animate-spin" />;
+      default: return <RefreshCw size={size} className="text-[#4daeff] animate-spin" />;
     }
   };
 
@@ -187,15 +188,31 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
     }
   };
 
+  const currentIndex = filteredRuns.findIndex(r => r.id === selectedRun?.id);
+  const hasNext = currentIndex > 0;
+  const hasPrev = currentIndex < filteredRuns.length - 1;
+
+  const goToNext = () => {
+    if (hasNext) {
+      setSelectedRun(filteredRuns[currentIndex - 1]);
+    }
+  };
+
+  const goToPrev = () => {
+    if (hasPrev) {
+      setSelectedRun(filteredRuns[currentIndex + 1]);
+    }
+  };
+
   return (
-    <div className="flex-1 flex overflow-hidden bg-zinc-950 select-none font-sans">
+    <div className="flex-1 flex overflow-hidden bg-[#0c0c0c] select-none font-sans relative">
       {/* Filters Left Sidebar */}
-      <aside className="w-[160px] border-r border-zinc-800 bg-zinc-950 flex flex-col shrink-0 overflow-y-auto">
-        <div className="p-3 border-b border-zinc-800 flex justify-between items-center sticky top-0 bg-zinc-950 z-10">
+      <aside className="w-[160px] border-r border-[#222222] bg-[#111111] flex flex-col shrink-0 overflow-y-auto">
+        <div className="p-3 border-b border-[#222222] flex justify-between items-center sticky top-0 bg-[#111111] z-10">
           <h2 className="text-[10px] font-mono uppercase font-bold tracking-widest text-zinc-300 flex items-center gap-1.5">
             <SlidersHorizontal size={11} /> Filters
           </h2>
-          <button onClick={handleFilterReset} className="text-[9px] font-mono font-bold uppercase text-blue-400 hover:underline">Reset</button>
+          <button onClick={handleFilterReset} className="text-[9px] font-mono font-bold uppercase text-[#4daeff] hover:underline">Reset</button>
         </div>
 
         <div className="p-3 space-y-5">
@@ -212,10 +229,10 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
                         type="checkbox"
                         checked={statusFilters[key]}
                         onChange={() => toggleStatusFilter(key)}
-                        className="rounded bg-zinc-800 border-zinc-700 text-blue-400 focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5 cursor-pointer"
+                        className="rounded bg-[#1a1a1a] border-zinc-700 text-[#4daeff] focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5 cursor-pointer"
                       />
                       <span className="group-hover:text-white transition-colors flex items-center gap-1.5">
-                        {key === 'Pass' && <span className="w-2 h-2 rounded-full bg-green-500"></span>}
+                        {key === 'Pass' && <span className="w-2 h-2 rounded-full bg-[#4caf50]"></span>}
                         {key === 'Fail' && <span className="w-2 h-2 rounded-full bg-red-500"></span>}
                         {key === 'Flaky' && <span className="w-2 h-2 rounded-full bg-amber-500"></span>}
                         {key}
@@ -237,8 +254,8 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
                   onClick={() => setEnvFilter(env)}
                   className={`w-full text-left px-2 py-1.5 rounded text-xs font-mono uppercase tracking-wider transition-colors ${
                     (env === 'All' && envFilter === 'All') || envFilter === env
-                      ? 'bg-blue-500/10 text-blue-400 font-bold border border-blue-500/30'
-                      : 'text-zinc-400 hover:bg-zinc-800 hover:text-white border border-transparent'
+                      ? 'bg-[#4daeff]/10 text-[#4daeff] font-bold border border-[#4daeff]/30'
+                      : 'text-zinc-400 hover:bg-[#1a1a1a] hover:text-white border border-transparent'
                   }`}
                 >
                   {env === 'All' ? 'All Environments' : env}
@@ -257,8 +274,8 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
                   onClick={() => setSuiteFilter(suite)}
                   className={`px-2 py-1 rounded text-[10px] font-mono uppercase font-bold transition-all border ${
                     (suite === 'All' && suiteFilter === 'All') || suiteFilter === suite
-                      ? 'bg-blue-500 text-black border-blue-500'
-                      : 'bg-zinc-800 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white'
+                      ? 'bg-[#4daeff] text-black border-[#4daeff]'
+                      : 'bg-[#1a1a1a] border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white'
                   }`}
                 >
                   {suite}
@@ -270,123 +287,151 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
       </aside>
 
       {/* Runs List Center Area */}
-      <section className="flex-1 border-r border-zinc-800 flex flex-col h-full bg-zinc-950">
-        {/* Header toolbar */}
-        <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
-          <div className="flex items-center gap-3">
-            <h2 className="text-sm font-bold text-white">Recent Runs</h2>
-            <span className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-500 text-[10px] font-mono">Showing {filteredRuns.length} of {runs.length}</span>
+      {!isFullscreen && (
+        <section className="flex-1 border-r border-[#262626] flex flex-col h-full bg-[#0c0c0c]">
+          {/* Header toolbar */}
+          <div className="p-4 border-b border-[#262626] flex justify-between items-center bg-[#101010]">
+            <div className="flex items-center gap-3">
+              <h2 className="text-sm font-bold text-white">Recent Runs</h2>
+              <span className="px-2 py-0.5 rounded bg-[#1a1a1a] text-zinc-500 text-[10px] font-mono">Showing {filteredRuns.length} of {runs.length}</span>
+            </div>
+            <div>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="bg-[#1a1a1a] border border-[#262626] rounded text-[10px] font-mono uppercase font-bold text-zinc-300 py-1 pl-2 pr-7 outline-none focus:border-[#4daeff]"
+              >
+                <option value="Latest">Sort: Latest</option>
+                <option value="Duration">Sort: Duration</option>
+                <option value="Pass Rate">Sort: Pass Rate</option>
+              </select>
+            </div>
           </div>
-          <div>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="bg-zinc-800 border border-zinc-800 rounded text-[10px] font-mono uppercase font-bold text-zinc-300 py-1 pl-2 pr-7 outline-none focus:border-blue-500"
-            >
-              <option value="Latest">Sort: Latest</option>
-              <option value="Duration">Sort: Duration</option>
-              <option value="Pass Rate">Sort: Pass Rate</option>
-            </select>
-          </div>
-        </div>
 
-        {/* Scrollable runs feed list */}
-        <div className="flex-1 overflow-y-auto divide-y divide-zinc-800/40 flex flex-col">
-          {paginatedRuns.length > 0 ? (
-            paginatedRuns.map((run) => {
-              const isSelected = selectedRun.id === run.id;
-              return (
-                <div
-                  key={run.id}
-                  onClick={() => { setSelectedRun(run); setActiveTab('Summary'); }}
-                  className={`px-4 py-3 flex items-center gap-3 cursor-pointer transition-all duration-150 ${
-                    isSelected 
-                      ? 'bg-zinc-800 border-l-4 border-l-blue-400' 
-                      : 'hover:bg-zinc-900 border-l-4 border-l-transparent'
-                  }`}
+          {/* Scrollable runs feed list */}
+          <div className="flex-1 overflow-y-auto divide-y divide-[#262626]/40 flex flex-col">
+            {paginatedRuns.length > 0 ? (
+              paginatedRuns.map((run) => {
+                const isSelected = selectedRun?.id === run.id;
+                return (
+                  <div
+                    key={run.id}
+                    onClick={() => { setSelectedRun(run); setActiveTab('Summary'); }}
+                    className={`px-4 py-3 flex items-center gap-3 cursor-pointer transition-all duration-150 ${
+                      isSelected 
+                        ? 'bg-[#1a1a1a] border-l-4 border-l-[#4daeff]' 
+                        : 'hover:bg-[#151515] border-l-4 border-l-transparent'
+                    }`}
+                  >
+                    <div className="shrink-0">{getStatusIcon(run.status, 18)}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="font-mono text-xs text-[#4daeff] font-bold">{run.id}</span>
+                        <span className="text-[10px] text-zinc-500 font-mono">{run.timestamp}</span>
+                      </div>
+                      <div className="text-xs text-zinc-200 font-semibold truncate leading-none">{run.name}</div>
+                      <div className="text-[10px] text-zinc-500 truncate mt-1 flex items-center gap-1 font-mono">
+                        <GitBranch size={10} /> {run.branch}
+                      </div>
+                    </div>
+                    <div className="w-20 flex flex-col items-end">
+                      <span className="text-xs font-mono font-bold text-white">{run.passRate}%</span>
+                      <span className="text-[10px] text-zinc-500 font-mono mt-0.5">{run.duration}</span>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="p-8 text-center text-zinc-500 text-xs">
+                No runs match active status or environment filter selections.
+              </div>
+            )}
+            
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="p-3 border-t border-[#262626] bg-[#101010] flex justify-between items-center mt-auto">
+                <button 
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 bg-[#1a1a1a] border border-[#262626] text-zinc-300 text-xs rounded hover:bg-[#252525] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <div className="shrink-0">{getStatusIcon(run.status, 18)}</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-0.5">
-                      <span className="font-mono text-xs text-blue-400 font-bold">{run.id}</span>
-                      <span className="text-[10px] text-zinc-500 font-mono">{run.timestamp}</span>
-                    </div>
-                    <div className="text-xs text-zinc-200 font-semibold truncate leading-none">{run.name}</div>
-                    <div className="text-[10px] text-zinc-500 truncate mt-1 flex items-center gap-1 font-mono">
-                      <GitBranch size={10} /> {run.branch}
-                    </div>
-                  </div>
-                  <div className="w-20 flex flex-col items-end">
-                    <span className="text-xs font-mono font-bold text-white">{run.passRate}%</span>
-                    <span className="text-[10px] text-zinc-500 font-mono mt-0.5">{run.duration}</span>
-                  </div>
-                </div>
-              );
-            })
-          ) : (
-            <div className="p-8 text-center text-zinc-500 text-xs">
-              No runs match active status or environment filter selections.
-            </div>
-          )}
-          
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="p-3 border-t border-zinc-800 bg-zinc-950 flex justify-between items-center mt-auto">
-              <button 
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1 bg-zinc-800 border border-zinc-800 text-zinc-300 text-xs rounded hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              <span className="text-xs text-zinc-500">Page {currentPage} of {totalPages}</span>
-              <button 
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1 bg-zinc-800 border border-zinc-800 text-zinc-300 text-xs rounded hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
-          )}
-        </div>
-      </section>
+                  Previous
+                </button>
+                <span className="text-xs text-zinc-500">Page {currentPage} of {totalPages}</span>
+                <button 
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 bg-[#1a1a1a] border border-[#262626] text-zinc-300 text-xs rounded hover:bg-[#252525] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Right Column: Run Details (Progressive Disclosure) */}
-      <aside className="w-[360px] flex-col h-full bg-zinc-950 flex shrink-0 border-l border-zinc-800">
-        {/* Detail Header */}
-        <div className="p-4 bg-zinc-900 border-b border-zinc-800">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className={`px-2 py-0.5 rounded-sm font-mono text-[9px] uppercase font-bold border ${
-                  selectedRun.status === 'Passed' 
-                    ? 'bg-green-500/15 text-green-500 border-green-500/30' 
-                    : selectedRun.status === 'Failed'
-                    ? 'bg-red-500/15 text-red-400 border-red-500/30'
-                    : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-                }`}>
-                  {selectedRun.status}
-                </span>
-                <span className="font-mono text-xs text-zinc-500">{selectedRun.id}</span>
+      {selectedRun && (
+        <aside className={`${isFullscreen ? 'absolute inset-0 z-50' : 'w-[360px] border-l'} flex-col h-full bg-[#101010] flex shrink-0 border-[#262626]`}>
+          {/* Detail Header */}
+          <div className="p-4 bg-[#141414] border-b border-[#262626]">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={`px-2 py-0.5 rounded-sm font-mono text-[9px] uppercase font-bold border ${
+                    selectedRun.status === 'Passed' 
+                      ? 'bg-[#4caf50]/15 text-[#4caf50] border-[#4caf50]/30' 
+                      : selectedRun.status === 'Failed'
+                      ? 'bg-red-500/15 text-red-400 border-red-500/30'
+                      : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                  }`}>
+                    {selectedRun.status}
+                  </span>
+                  <span className="font-mono text-xs text-zinc-500">{selectedRun.id}</span>
+                </div>
+                <h2 className={`${isFullscreen ? 'text-xl' : 'text-sm'} font-bold text-white break-all`}>{selectedRun.name}</h2>
               </div>
-              <h2 className="text-sm font-bold text-white break-all">{selectedRun.name}</h2>
+              <div className="flex gap-2 items-center">
+                <button 
+                  onClick={goToPrev}
+                  disabled={!hasPrev}
+                  className="p-1.5 rounded hover:bg-[#252525] text-zinc-400 disabled:opacity-30 transition-colors"
+                  title="Previous Cycle"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button 
+                  onClick={goToNext}
+                  disabled={!hasNext}
+                  className="p-1.5 rounded hover:bg-[#252525] text-zinc-400 disabled:opacity-30 transition-colors"
+                  title="Next Cycle"
+                >
+                  <ChevronRight size={16} />
+                </button>
+                <button 
+                  onClick={() => setIsFullscreen(!isFullscreen)} 
+                  className="p-1.5 rounded hover:bg-[#252525] text-zinc-400 transition-colors ml-2"
+                  title={isFullscreen ? 'Exit Full Screen' : 'Full Screen'}
+                >
+                  {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* Sub Navigation Details tabs */}
+            {/* Sub Navigation Details tabs */}
           <div className="flex gap-4">
             {(['Summary', 'Results', 'Logs'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`px-1 py-1.5 font-mono text-[10px] uppercase font-bold tracking-wider relative transition-colors ${
-                  activeTab === tab ? 'text-blue-400' : 'text-zinc-500 hover:text-zinc-300'
+                  activeTab === tab ? 'text-[#4daeff]' : 'text-zinc-500 hover:text-zinc-300'
                 }`}
               >
                 {tab}
                 {activeTab === tab && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#4daeff]" />
                 )}
               </button>
             ))}
@@ -394,7 +439,7 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
         </div>
 
         {/* Scrollable Tab Content Panels */}
-        <div className="flex-1 overflow-y-auto p-4 bg-zinc-950 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 bg-[#0d0d0d] space-y-4">
           {activeTab === 'Summary' && (
             <>
               {/* Anomaly Alerts (if failed) */}
@@ -412,23 +457,23 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
 
               {/* Grid Bento Metadata */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-zinc-900 border border-zinc-800 p-3 rounded flex flex-col justify-between h-16">
+                <div className="bg-[#151515] border border-[#262626] p-3 rounded flex flex-col justify-between h-16">
                   <span className="text-[9px] font-mono text-zinc-500 uppercase font-bold tracking-wider">Environment</span>
                   <span className="text-xs font-bold text-white flex items-center gap-1.5 mt-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span> {selectedRun.environment}
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#4daeff]"></span> {selectedRun.environment}
                   </span>
                 </div>
-                <div className="bg-zinc-900 border border-zinc-800 p-3 rounded flex flex-col justify-between h-16">
+                <div className="bg-[#151515] border border-[#262626] p-3 rounded flex flex-col justify-between h-16">
                   <span className="text-[9px] font-mono text-zinc-500 uppercase font-bold tracking-wider">Duration</span>
                   <span className="text-xs font-bold text-white font-mono mt-1">{selectedRun.duration}</span>
                 </div>
-                <div className="bg-zinc-900 border border-zinc-800 p-3 rounded flex flex-col justify-between h-16">
+                <div className="bg-[#151515] border border-[#262626] p-3 rounded flex flex-col justify-between h-16">
                   <span className="text-[9px] font-mono text-zinc-500 uppercase font-bold tracking-wider">Triggered By</span>
                   <span className="text-xs font-bold text-white flex items-center gap-1 mt-1 font-sans">
                     <User size={12} className="text-zinc-500" /> {selectedRun.triggeredBy}
                   </span>
                 </div>
-                <div className="bg-zinc-900 border border-zinc-800 p-3 rounded flex flex-col justify-between h-16">
+                <div className="bg-[#151515] border border-[#262626] p-3 rounded flex flex-col justify-between h-16">
                   <span className="text-[9px] font-mono text-zinc-500 uppercase font-bold tracking-wider">Commit</span>
                   <span className="text-xs font-bold text-white font-mono truncate mt-1 flex items-center gap-1">
                     <GitBranch size={12} className="text-zinc-500" /> {selectedRun.commit}
@@ -439,42 +484,42 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
               {/* Execution Summary stacked bar breakdown */}
               <div className="space-y-4 pt-2">
                 <h3 className="text-[10px] font-mono uppercase font-bold tracking-widest text-zinc-500">Execution Summary</h3>
-                <div className="flex h-3 rounded-full overflow-hidden bg-zinc-800 border border-zinc-800">
-                  <div className="bg-green-500" style={{ width: `${(selectedRun.passedCount / selectedRun.testsCount) * 100}%` }} />
+                <div className="flex h-3 rounded-full overflow-hidden bg-[#262626] border border-zinc-800">
+                  <div className="bg-[#4caf50]" style={{ width: `${(selectedRun.passedCount / selectedRun.testsCount) * 100}%` }} />
                   <div className="bg-amber-500" style={{ width: `${(selectedRun.skippedCount / selectedRun.testsCount) * 100}%` }} />
                   <div className="bg-red-500" style={{ width: `${(selectedRun.failedCount / selectedRun.testsCount) * 100}%` }} />
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center p-2 rounded hover:bg-zinc-900 transition-colors cursor-pointer group text-xs">
+                  <div className="flex justify-between items-center p-2 rounded hover:bg-[#151515] transition-colors cursor-pointer group text-xs">
                     <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                      <span className="w-2 h-2 rounded-full bg-[#4caf50]"></span>
                       <span className="text-zinc-300">Passed</span>
                     </div>
-                    <span className="font-mono text-zinc-400 group-hover:text-blue-400">{selectedRun.passedCount}</span>
+                    <span className="font-mono text-zinc-400 group-hover:text-[#4daeff]">{selectedRun.passedCount}</span>
                   </div>
-                  <div className="flex justify-between items-center p-2 rounded hover:bg-zinc-900 transition-colors cursor-pointer group text-xs">
+                  <div className="flex justify-between items-center p-2 rounded hover:bg-[#151515] transition-colors cursor-pointer group text-xs">
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-amber-500"></span>
                       <span className="text-zinc-300">Skipped / Flaky</span>
                     </div>
-                    <span className="font-mono text-zinc-400 group-hover:text-blue-400">{selectedRun.skippedCount}</span>
+                    <span className="font-mono text-zinc-400 group-hover:text-[#4daeff]">{selectedRun.skippedCount}</span>
                   </div>
-                  <div className="flex justify-between items-center p-2 rounded hover:bg-zinc-900 transition-colors cursor-pointer group text-xs">
+                  <div className="flex justify-between items-center p-2 rounded hover:bg-[#151515] transition-colors cursor-pointer group text-xs">
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-red-500"></span>
                       <span className="text-zinc-300">Failed</span>
                     </div>
-                    <span className="font-mono text-zinc-400 group-hover:text-blue-400">{selectedRun.failedCount}</span>
+                    <span className="font-mono text-zinc-400 group-hover:text-[#4daeff]">{selectedRun.failedCount}</span>
                   </div>
                 </div>
               </div>
 
               {/* Artifacts Panel */}
-              <div className="pt-2 border-t border-zinc-800/50">
+              <div className="pt-2 border-t border-[#262626]/50">
                 <h3 className="text-[10px] font-mono uppercase font-bold tracking-widest text-zinc-500 mb-3">Artifacts</h3>
                 <div className="grid grid-cols-1 gap-2">
-                  <button onClick={() => setActiveTab('Logs')} className="flex items-center justify-center gap-2 p-2 rounded border border-zinc-800 bg-zinc-950 hover:bg-zinc-900 text-zinc-200 text-xs transition-colors">
+                  <button onClick={() => setActiveTab('Logs')} className="flex items-center justify-center gap-2 p-2 rounded border border-[#262626] bg-[#0c0c0c] hover:bg-[#1c1c1c] text-zinc-200 text-xs transition-colors">
                     <Terminal size={14} className="text-zinc-500" /> Terminal Logs
                   </button>
                 </div>
@@ -490,47 +535,38 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
                   runTestCases.slice(0, 50).map(tc => (
                     <div 
                       key={tc.id} 
-                      className="p-3 bg-zinc-900 border border-zinc-800 rounded flex flex-col gap-2 group hover:border-blue-500/30 transition-all cursor-pointer" onClick={() => setModalTestCaseId(tc.id)}
+                      className="p-3 bg-[#121212] border border-[#262626] rounded flex flex-col gap-2 group hover:border-[#4daeff]/30 transition-all"
                     >
                       <div className="flex justify-between items-start gap-2">
-                        <div>
-                          <span className="text-xs text-zinc-200 font-mono block group-hover:text-blue-400 transition-colors">{tc.name}</span>
+                        <div className="cursor-pointer" onClick={() => onSelectTest(tc.id)}>
+                          <span className="text-xs text-zinc-200 font-mono block group-hover:text-[#4daeff] transition-colors">{tc.name}</span>
                           <span className="text-[10px] text-zinc-500 font-mono mt-0.5">{tc.folder}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setModalTestCaseId(tc.id); }}
-                            className="p-1 hover:bg-zinc-800 rounded text-zinc-500 hover:text-white transition-colors"
-                            title="Expand Details"
-                          >
-                            <Maximize2 size={14} />
-                          </button>
-                          <span className={`text-[9px] font-mono uppercase font-bold border px-1.5 py-0.5 rounded shrink-0 ${
-                            tc.status === 'Passed' 
-                              ? 'bg-green-500/10 text-green-500 border-green-500/20' 
-                              : tc.status === 'Failed' 
-                              ? 'bg-red-500/10 text-red-500 border-red-500/20' 
-                              : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
-                          }`}>
-                            {tc.status}
-                          </span>
-                        </div>
+                        <span className={`text-[9px] font-mono uppercase font-bold border px-1.5 py-0.5 rounded shrink-0 ${
+                          tc.status === 'Passed' 
+                            ? 'bg-[#4caf50]/10 text-[#4caf50] border-[#4caf50]/20' 
+                            : tc.status === 'Failed' 
+                            ? 'bg-red-500/10 text-red-500 border-red-500/20' 
+                            : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                        }`}>
+                          {tc.status}
+                        </span>
                       </div>
                       
                       {/* HTTP Network Details */}
-                      <div className="mt-2 pt-2 border-t border-zinc-800 flex flex-col gap-2">
+                      <div className="mt-2 pt-2 border-t border-[#262626] flex flex-col gap-2">
                         <div className="flex justify-between items-center text-[10px] font-mono">
                           <div className="flex gap-2">
                             <span className="text-zinc-500 uppercase tracking-wider font-bold">Network</span>
-                            <span className={`px-1 rounded font-bold ${tc.status === 'Failed' ? 'bg-red-500/10 text-red-500' : 'bg-blue-500/10 text-blue-400'}`}>
+                            <span className={`px-1 rounded font-bold ${tc.status === 'Failed' ? 'bg-red-500/10 text-red-500' : 'bg-[#4daeff]/10 text-[#4daeff]'}`}>
                               {tc.status === 'Failed' ? '500 ERROR' : '200 OK'}
                             </span>
                           </div>
-                          <span className="text-zinc-500 truncate max-w-[200px]" title="https://api.test-runner.local/v1/telemetry/evaluate">https://api.test-runner.local/v1/telemetry/evaluate</span>
+                          <span className="text-zinc-500 truncate max-w-[200px]" title="https://api.aware.internal/v1/telemetry/evaluate">https://api.aware.internal/v1/telemetry/evaluate</span>
                         </div>
                         
                         <div className="grid grid-cols-2 gap-2 mt-1">
-                          <div className="bg-zinc-950 border border-zinc-800 rounded p-2 overflow-x-auto">
+                          <div className="bg-[#0a0a0a] border border-[#222] rounded p-2 overflow-x-auto">
                             <span className="text-[9px] font-bold uppercase text-zinc-500 tracking-widest block mb-1">Headers</span>
                             <div className="text-[9px] font-mono text-zinc-400 whitespace-nowrap">
                               <div><span className="text-zinc-500">Content-Type:</span> application/json</div>
@@ -539,7 +575,7 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
                               <div><span className="text-zinc-500">User-Agent:</span> Playwright/1.44.1</div>
                             </div>
                           </div>
-                          <div className="bg-zinc-950 border border-zinc-800 rounded p-2 overflow-x-auto">
+                          <div className="bg-[#0a0a0a] border border-[#222] rounded p-2 overflow-x-auto">
                             <span className="text-[9px] font-bold uppercase text-zinc-500 tracking-widest block mb-1">Cookies</span>
                             <div className="text-[9px] font-mono text-zinc-400 whitespace-nowrap">
                               <div><span className="text-zinc-500">session_id:</span> s_{tc.runId ? tc.runId.substring(0, 6) : '9999'}</div>
@@ -549,9 +585,9 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
                           </div>
                         </div>
                         
-                        <div className="bg-zinc-950 border border-zinc-800 rounded p-2 mt-1">
+                        <div className="bg-[#0a0a0a] border border-[#222] rounded p-2 mt-1">
                           <span className="text-[9px] font-bold uppercase text-zinc-500 tracking-widest block mb-1.5">Waterfall Timeline</span>
-                          <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden flex">
+                          <div className="w-full bg-[#222] h-1.5 rounded-full overflow-hidden flex">
                             <div className="h-full bg-blue-500/50" style={{ width: '15%' }} title="DNS Lookup: 15%"></div>
                             <div className="h-full bg-amber-500/50" style={{ width: '20%' }} title="Initial Connection: 20%"></div>
                             <div className="h-full bg-purple-500/50" style={{ width: '10%' }} title="SSL: 10%"></div>
@@ -565,10 +601,21 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
                         </div>
                       </div>
                       
+                      {/* Interactive AI Diagnostician inside individual test case */}
+                      {tc.status !== 'Passed' && onTriggerAi && (
+                        <button
+                          onClick={() => {
+                            onTriggerAi(`Review failed test case "${tc.name}" inside run ${tc.runId}. Error: "${tc.errorMsg || 'Intermittent Timeout'}". Stacktrace: "${tc.stackTrace || 'No stack trace captured'}". Provide a root-cause explanation and code repair recommendation.`);
+                          }}
+                          className="py-1 bg-[#4daeff]/10 hover:bg-[#4daeff]/25 text-[#4daeff] border border-[#4daeff]/20 text-[9px] font-mono font-bold rounded uppercase tracking-wider flex items-center justify-center gap-1 cursor-pointer transition-all"
+                        >
+                          <Sparkles size={10} /> Diagnose Error with Chrome AI
+                        </button>
+                      )}
                     </div>
                   ))
                 ) : (
-                  <div className="p-4 text-center text-xs text-zinc-500 border border-zinc-800 rounded bg-zinc-900">
+                  <div className="p-4 text-center text-xs text-zinc-500 border border-[#262626] rounded bg-[#121212]">
                     No test cases found for this run.
                   </div>
                 )}
@@ -584,12 +631,23 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
 
           {activeTab === 'Logs' && (
             <div className="space-y-3">
-              <div className="bg-black/40 border border-zinc-800 p-3 rounded font-mono text-[11px] text-zinc-300 leading-relaxed whitespace-pre-wrap select-all">
+              {onTriggerAi && (
+                <button
+                  onClick={() => {
+                    const logsText = mockLogs[selectedRun.id as keyof typeof mockLogs]?.join('\n') || "No raw logs available.";
+                    onTriggerAi(`Analyze these console logs for pipeline run ${selectedRun.id} (${selectedRun.name}):\n\n${logsText}\n\nReview for memory leaks, timeout thresholds, assertion failures, and provide remediation steps.`);
+                  }}
+                  className="w-full py-1.5 bg-[#4daeff]/10 hover:bg-[#4daeff]/20 text-[#4daeff] border border-[#4daeff]/30 rounded text-[9px] font-mono font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+                >
+                  <Sparkles size={11} /> Triage Live Log Streams
+                </button>
+              )}
+              <div className="bg-black/40 border border-[#262626] p-3 rounded font-mono text-[11px] text-zinc-300 leading-relaxed whitespace-pre-wrap select-all">
                 {mockLogs[selectedRun.id as keyof typeof mockLogs]?.map((log, index) => (
                   <div key={index} className={
                     log.includes('ERROR') || log.includes('ASSERTION') ? 'text-red-400' :
                     log.includes('WARNING') ? 'text-amber-400' :
-                    log.includes('SUCCESS') ? 'text-emerald-400' : 'text-zinc-400'
+                    log.includes('SUCCESS') ? 'text-[#81c784]' : 'text-zinc-400'
                   }>
                     {log}
                   </div>
@@ -601,13 +659,6 @@ export default function RunsView({ searchQuery, onRefreshData, onSelectTest, act
           )}
         </div>
       </aside>
-      {modalTestCaseId && (
-        <TestCaseModal 
-          testCases={runTestCases} 
-          initialTestId={modalTestCaseId} 
-          onClose={() => setModalTestCaseId(null)} 
-          onShowToast={onShowToast}
-        />
       )}
     </div>
   );

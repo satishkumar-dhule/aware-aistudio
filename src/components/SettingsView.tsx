@@ -220,7 +220,7 @@ export default function SettingsView({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = "test_runs_github_actions_contract_template.json";
+    a.download = "aware_github_actions_contract_template.json";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -272,7 +272,7 @@ export default function SettingsView({
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `test_runs_telemetry_backup_${new Date().toISOString().slice(0,10)}.json`;
+      a.download = `aware_telemetry_backup_${new Date().toISOString().slice(0,10)}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -311,98 +311,29 @@ export default function SettingsView({
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-zinc-950 select-none font-sans">
+    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#0c0c0c] select-none font-sans">
       {/* Title */}
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-white">Settings & Configuration</h2>
-        <p className="text-zinc-500 text-xs mt-1">Configure workspace variables, clear browser cache schemas, and trigger automated telemetry simulations.</p>
+        <p className="text-zinc-500 text-xs mt-1">Configure workspace variables, trigger backend python tests, and enforce test contracts.</p>
       </div>
-
-      {/* GitHub Pages Sync Status Banner */}
-      {syncResult && (
-        <div className={`p-4 rounded border text-xs font-sans flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in ${
-          syncResult.success 
-            ? 'bg-emerald-950/20 border-emerald-900/40 text-emerald-300' 
-            : syncResult.source === 'local' 
-              ? 'bg-zinc-900/60 border-zinc-800 text-zinc-400' 
-              : 'bg-amber-950/20 border-amber-900/40 text-amber-300'
-        }`}>
-          <div className="flex items-start gap-3">
-            <div className={`p-2 rounded shrink-0 ${
-              syncResult.success ? 'bg-emerald-900/30' : 'bg-zinc-900'
-            }`}>
-              {syncResult.success ? (
-                <CheckCircle2 size={16} className={`text-emerald-400 ${isSyncing ? 'animate-spin' : ''}`} />
-              ) : (
-                <BookOpen size={16} className="text-zinc-400" />
-              )}
-            </div>
-            <div>
-              <h4 className="font-bold text-white uppercase tracking-wider text-[10px] flex items-center gap-1.5">
-                {syncResult.success ? (
-                  <>
-                    <span className={`h-1.5 w-1.5 rounded-full bg-emerald-400 ${isSyncing ? 'animate-ping' : 'animate-pulse'}`}></span>
-                    GitHub Pages Sync Active (AJAX Polling Every 15s)
-                  </>
-                ) : (
-                  'Local Sandbox / Simulated Mode'
-                )}
-              </h4>
-              <p className="text-[11px] mt-0.5 leading-relaxed opacity-90">
-                {syncResult.message}
-              </p>
-              {syncResult.success && lastSyncTime && (
-                <p className="text-[10px] text-emerald-400/70 mt-1 font-mono">
-                  ● Last Checked: {lastSyncTime.toLocaleTimeString()} {isSyncing ? '(fetching fresh logs...)' : '(up to date)'}
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="flex gap-2 shrink-0">
-            {onForceSync && (
-              <button
-                onClick={onForceSync}
-                disabled={isSyncing}
-                className={`px-3 py-1.5 rounded font-mono text-[9px] uppercase font-bold transition-all cursor-pointer flex items-center gap-1 ${
-                  syncResult.success 
-                    ? 'bg-emerald-500 hover:bg-emerald-400 text-black border border-emerald-400' 
-                    : 'bg-blue-500 hover:bg-blue-500/80 text-black border border-blue-500'
-                }`}
-              >
-                <span>{isSyncing ? 'Syncing...' : 'Sync Now'}</span>
-                <span className={`${isSyncing ? 'animate-spin' : ''}`}>⟳</span>
-              </button>
-            )}
-            <button
-              onClick={() => setContractTab('pages')}
-              className={`px-3 py-1.5 rounded font-mono text-[9px] uppercase font-bold transition-all cursor-pointer ${
-                syncResult.success 
-                  ? 'bg-emerald-900/40 text-emerald-300 hover:bg-emerald-900/60 border border-emerald-800/50' 
-                  : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 border border-zinc-700'
-              }`}
-            >
-              Setup Pages Integration Guide
-            </button>
-          </div>
-        </div>
-      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         
         {/* Workspace Telemetry Simulator & Database Seeder */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded p-4 space-y-3 col-span-1 md:col-span-2">
+        <div className="bg-[#131313] border border-[#262626] rounded p-4 space-y-3 col-span-1 md:col-span-2">
           <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
-            <Database size={16} className="text-blue-400" /> Browser Database Control Plane
+            <Database size={16} className="text-[#4daeff]" /> Browser Database Control Plane
           </h3>
           <p className="text-xs text-zinc-400 leading-normal">
-            Test Runs uses a robust, reactive client-side database layer mapped to Local/IndexedDB. You can trigger simulated pipeline cycles to immediately test responsive UI graphs, details, anomalies.
+            AWARE uses a robust, reactive client-side database layer mapped to Local/IndexedDB. You can trigger real test execution pipelines from the backend.
           </p>
 
           {/* Database stats banner */}
-          <div className="grid grid-cols-3 gap-3 p-3 bg-zinc-950 border border-zinc-800 rounded">
+          <div className="grid grid-cols-3 gap-3 p-3 bg-[#0d0d0d] border border-zinc-800 rounded">
             <div className="text-center py-2">
               <span className="text-[10px] text-zinc-500 block uppercase font-mono">Telemetry Runs</span>
-              <strong className="text-lg font-mono text-blue-400 mt-1 block">{dbStats.runs}</strong>
+              <strong className="text-lg font-mono text-[#4daeff] mt-1 block">{dbStats.runs}</strong>
             </div>
             <div className="text-center py-2 border-x border-zinc-800">
               <span className="text-[10px] text-zinc-500 block uppercase font-mono">Test Cases</span>
@@ -415,31 +346,13 @@ export default function SettingsView({
           </div>
           
           <div className="space-y-3 pt-2">
-            <div className="flex justify-between items-center p-3 rounded border border-zinc-800 bg-zinc-950 text-xs">
-              <div>
-                <span className="font-semibold text-zinc-200 block flex items-center gap-1.5">
-                  <Activity size={12} className="text-emerald-500 animate-pulse" /> Automatic Telemetry Stream
-                </span>
-                <span className="text-[10px] text-zinc-500 font-mono mt-0.5">Applies random live updates and anomalies dynamically</span>
-              </div>
-              <button 
-                onClick={onToggleSimulation}
-                className={`px-3 py-1.5 rounded font-mono text-[9px] uppercase font-bold transition-all ${
-                  simulationMode 
-                    ? 'bg-emerald-500 text-black' 
-                    : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
-                }`}
-              >
-                {simulationMode ? 'ACTIVE' : 'INACTIVE'}
-              </button>
-            </div>
 
             <div className="flex gap-3">
               <button 
-                onClick={handleAddSimulatedRun}
-                className="flex-1 py-2.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded font-mono text-[10px] uppercase font-bold transition-all flex justify-center items-center gap-1.5 cursor-pointer"
+                onClick={onRefreshData}
+                className="flex-1 py-2.5 bg-[#4daeff]/10 hover:bg-[#4daeff]/20 text-[#4daeff] border border-[#4daeff]/30 rounded font-mono text-[10px] uppercase font-bold transition-all flex justify-center items-center gap-1.5 cursor-pointer"
               >
-                <PlusCircle size={13} /> Generate Simulated Run
+                <PlusCircle size={13} /> Fetch Latest GitHub Actions Tests
               </button>
               
               {!showResetConfirm ? (
@@ -471,9 +384,9 @@ export default function SettingsView({
         </div>
 
         {/* Enterprise Diagnostics, Export & Import */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded p-4 space-y-3 col-span-1 md:col-span-2">
+        <div className="bg-[#131313] border border-[#262626] rounded p-4 space-y-3 col-span-1 md:col-span-2">
           <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
-            <Wrench size={16} className="text-blue-400" /> Data Layer Integrity, Backups & Verification
+            <Wrench size={16} className="text-[#4daeff]" /> Data Layer Integrity, Backups & Verification
           </h3>
           <p className="text-xs text-zinc-400 leading-normal">
             Enforce self-healing schemas, eliminate redundant caches, and execute manual transaction validations to stabilize the underlying telemetry tables. Download a full local state snapshot or restore your environment easily.
@@ -485,7 +398,7 @@ export default function SettingsView({
               onClick={handleRunDiagnostics}
               className="py-2.5 bg-[#161616] hover:bg-[#1f1f1f] text-zinc-200 border border-zinc-800 hover:border-zinc-700 rounded font-mono text-[10px] uppercase font-bold transition-all flex justify-center items-center gap-1.5 cursor-pointer"
             >
-              <Wrench size={12} className="text-blue-400" /> Self-Healing Check
+              <Wrench size={12} className="text-[#4daeff]" /> Self-Healing Check
             </button>
 
             {/* Export Backup */}
@@ -524,15 +437,15 @@ export default function SettingsView({
         </div>
 
         {/* GitHub Actions Scheduler Integration Block */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded p-4 space-y-3 col-span-1 md:col-span-2">
+        <div className="bg-[#131313] border border-[#262626] rounded p-4 space-y-3 col-span-1 md:col-span-2">
           <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
             <Terminal size={16} className="text-[#a855f7]" /> GitHub Actions Scheduler Monitor
           </h3>
           <p className="text-xs text-zinc-400 leading-normal">
-            Your testing workflows are scheduled in GitHub Actions to run automatically on all environments (<span className="text-blue-400 font-mono font-bold">QA</span>, <span className="text-amber-400 font-mono font-bold">UAT</span>, and <span className="text-rose-500 font-mono font-bold">Prod</span>). Test Runs integrates with your pipeline metrics to aggregate cross-environment health instantly.
+            Your testing workflows are scheduled in GitHub Actions to run automatically on all environments (<span className="text-[#4daeff] font-mono font-bold">QA</span>, <span className="text-amber-400 font-mono font-bold">UAT</span>, and <span className="text-rose-500 font-mono font-bold">Prod</span>). AWARE integrates with your pipeline metrics to aggregate cross-environment health instantly.
           </p>
 
-          <div className="p-3.5 bg-zinc-950 border border-zinc-800 rounded flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+          <div className="p-3.5 bg-[#0d0d0d] border border-zinc-800 rounded flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-[#a855f7] animate-pulse animate-[pulse_2s_infinite]"></span>
@@ -554,18 +467,18 @@ export default function SettingsView({
         </div>
 
         {/* CI/CD Telemetry Schema & Data Contract Specification Explorer */}
-        <div className="col-span-1 md:col-span-2 bg-zinc-900 border border-zinc-800 rounded p-4 space-y-5">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
+        <div className="col-span-1 md:col-span-2 bg-[#131313] border border-[#262626] rounded p-4 space-y-5">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-[#262626] pb-4">
             <div>
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Database size={16} className="text-blue-400" /> CI/CD & GitHub Actions Data Contract Specification
+                <Database size={16} className="text-[#4daeff]" /> CI/CD & GitHub Actions Data Contract Specification
               </h3>
               <p className="text-xs text-zinc-400 mt-1 leading-normal">
                 Define, copy, and validate the JSON schema formats emitted by backend test runners for direct ingestion.
               </p>
             </div>
             
-            <div className="flex bg-zinc-950 border border-zinc-800 p-0.5 rounded text-[10px] font-mono shrink-0 overflow-x-auto max-w-full">
+            <div className="flex bg-[#0c0c0c] border border-zinc-800 p-0.5 rounded text-[10px] font-mono shrink-0 overflow-x-auto max-w-full">
               <button 
                 onClick={() => setContractTab('schema')}
                 className={`px-2.5 py-1 rounded transition-all cursor-pointer whitespace-nowrap ${contractTab === 'schema' ? 'bg-[#1c1c1c] text-white font-bold' : 'text-zinc-500 hover:text-zinc-300'}`}
@@ -592,7 +505,7 @@ export default function SettingsView({
               </button>
               <button 
                 onClick={() => setContractTab('pages')}
-                className={`px-2.5 py-1 rounded transition-all cursor-pointer whitespace-nowrap ${contractTab === 'pages' ? 'bg-[#1c1c1c] text-blue-400 font-bold border border-blue-500/20' : 'text-zinc-500 hover:text-zinc-300'}`}
+                className={`px-2.5 py-1 rounded transition-all cursor-pointer whitespace-nowrap ${contractTab === 'pages' ? 'bg-[#1c1c1c] text-[#4daeff] font-bold border border-[#4daeff]/20' : 'text-zinc-500 hover:text-zinc-300'}`}
               >
                 GitHub Pages Setup
               </button>
@@ -603,8 +516,8 @@ export default function SettingsView({
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                 {/* Run Contract */}
-                <div className="p-4 bg-zinc-950 border border-zinc-900 rounded space-y-2.5">
-                  <span className="text-[10px] font-mono uppercase font-bold text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">Run Data Contract</span>
+                <div className="p-4 bg-[#0a0a0a] border border-zinc-900 rounded space-y-2.5">
+                  <span className="text-[10px] font-mono uppercase font-bold text-[#4daeff] bg-[#4daeff]/10 px-1.5 py-0.5 rounded">Run Data Contract</span>
                   <div className="space-y-1.5 pt-1.5">
                     <div className="flex justify-between border-b border-zinc-900/50 pb-1 font-mono text-[11px]">
                       <span className="text-zinc-300 font-bold">id</span>
@@ -616,7 +529,7 @@ export default function SettingsView({
                     </div>
                     <div className="flex justify-between border-b border-zinc-900/50 pb-1 font-mono text-[11px]">
                       <span className="text-zinc-300 font-bold">status</span>
-                      <span className="text-emerald-400 font-bold">"Passed" | "Failed" | "Flaky" | "Running"</span>
+                      <span className="text-[#81c784] font-bold">"Passed" | "Failed" | "Flaky" | "Running"</span>
                     </div>
                     <div className="flex justify-between border-b border-zinc-900/50 pb-1 font-mono text-[11px]">
                       <span className="text-zinc-300 font-bold">environment</span>
@@ -638,7 +551,7 @@ export default function SettingsView({
                 </div>
 
                 {/* TestCase Contract */}
-                <div className="p-4 bg-zinc-950 border border-zinc-900 rounded space-y-2.5">
+                <div className="p-4 bg-[#0a0a0a] border border-zinc-900 rounded space-y-2.5">
                   <span className="text-[10px] font-mono uppercase font-bold text-[#a855f7] bg-[#a855f7]/10 px-1.5 py-0.5 rounded">TestCase Data Contract</span>
                   <div className="space-y-1.5 pt-1.5">
                     <div className="flex justify-between border-b border-zinc-900/50 pb-1 font-mono text-[11px]">
@@ -655,7 +568,7 @@ export default function SettingsView({
                     </div>
                     <div className="flex justify-between border-b border-zinc-900/50 pb-1 font-mono text-[11px]">
                       <span className="text-zinc-300 font-bold">status</span>
-                      <span className="text-emerald-400 font-bold">"Passed" | "Failed" | "Flaky" | "Skipped"</span>
+                      <span className="text-[#81c784] font-bold">"Passed" | "Failed" | "Flaky" | "Skipped"</span>
                     </div>
                     <div className="flex justify-between border-b border-zinc-900/50 pb-1 font-mono text-[11px]">
                       <span className="text-zinc-300 font-bold">priority</span>
@@ -693,14 +606,14 @@ export default function SettingsView({
                   </button>
                   <button 
                     onClick={handleDownloadTemplate}
-                    className="hover:text-white px-2 py-0.5 bg-zinc-900 rounded border border-zinc-800 flex items-center gap-1 cursor-pointer transition-colors text-blue-400 border-blue-500/20"
+                    className="hover:text-white px-2 py-0.5 bg-zinc-900 rounded border border-zinc-800 flex items-center gap-1 cursor-pointer transition-colors text-[#4daeff] border-[#4daeff]/20"
                   >
                     <Download size={10} /> Download Template
                   </button>
                 </div>
               </div>
 
-              <div className="bg-zinc-950 border border-zinc-900 rounded p-4 font-mono text-[11px] text-emerald-400 whitespace-pre overflow-x-auto select-all leading-normal max-h-[220px]">
+              <div className="bg-[#0c0c0c] border border-zinc-900 rounded p-4 font-mono text-[11px] text-[#81c784] whitespace-pre overflow-x-auto select-all leading-normal max-h-[220px]">
                 {playgroundText}
               </div>
             </div>
@@ -716,7 +629,7 @@ export default function SettingsView({
                     setPlaygroundText(e.target.value);
                     setPlaygroundResult(null);
                   }}
-                  className="w-full h-[180px] bg-zinc-950 text-emerald-400 font-mono text-[11px] p-3 border border-zinc-800 rounded focus:outline-none focus:border-zinc-700 leading-normal"
+                  className="w-full h-[180px] bg-[#0c0c0c] text-[#81c784] font-mono text-[11px] p-3 border border-zinc-800 rounded focus:outline-none focus:border-zinc-700 leading-normal"
                   placeholder="Paste your JSON payload here..."
                 />
               </div>
@@ -726,7 +639,7 @@ export default function SettingsView({
                   onClick={handlePlaygroundValidate}
                   className="px-4 py-2 bg-[#1c1c1c] hover:bg-[#252525] text-white border border-zinc-800 rounded font-mono text-[10px] uppercase font-bold transition-all flex items-center gap-1.5 cursor-pointer"
                 >
-                  <CheckCircle2 size={12} className="text-blue-400" /> Validate Schema Contract
+                  <CheckCircle2 size={12} className="text-[#4daeff]" /> Validate Schema Contract
                 </button>
                 {playgroundResult?.valid && (
                   <button 
@@ -752,7 +665,7 @@ export default function SettingsView({
                     )}
                   </div>
                   {playgroundResult.valid ? (
-                    <p className="text-[11px] opacity-90 leading-relaxed">✓ The telemetry payload conforms perfectly to Test Runs's database schema. You can integrate this payload production-wide safely.</p>
+                    <p className="text-[11px] opacity-90 leading-relaxed">✓ The telemetry payload conforms perfectly to AWARE's database schema. You can integrate this payload production-wide safely.</p>
                   ) : (
                     <ul className="list-disc list-inside text-[11px] space-y-1 pl-0.5">
                       {playgroundResult.errors.map((err, idx) => (
@@ -768,17 +681,17 @@ export default function SettingsView({
           {contractTab === 'yaml' && (
             <div className="space-y-3.5">
               <div className="flex justify-between items-center text-[10px] font-mono text-zinc-500">
-                <span>GITHUB ACTIONS WORKFLOW EXAMPLE (.GITHUB/WORKFLOWS/Test Runs-REPORT.YML)</span>
+                <span>GITHUB ACTIONS WORKFLOW EXAMPLE (.GITHUB/WORKFLOWS/AWARE-REPORT.YML)</span>
                 <button 
-                  onClick={() => copyToClipboard(`name: Test Runs Test Report Pipeline\non:\n  push:\n    branches: [ main ]\njobs:\n  report-telemetry:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v3\n      - name: Create Payload\n        run: |\n          echo '{"version":"1.2.0-secure","runs":[{"id":"RUN-GITHUB-1","name":"Smoke_Pipeline","branch":"main","status":"Passed","environment":"QA","duration":"40s","passRate":100,"triggeredBy":"CI","commit":"\\\${{ github.sha }}","testsCount":1,"passedCount":1,"skippedCount":0,"failedCount":0,"suite":"Smoke"}]}' > telemetry.json\n`)}
+                  onClick={() => copyToClipboard(`name: AWARE Test Report Pipeline\non:\n  push:\n    branches: [ main ]\njobs:\n  report-telemetry:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v3\n      - name: Create Payload\n        run: |\n          echo '{"version":"1.2.0-secure","runs":[{"id":"RUN-GITHUB-1","name":"Smoke_Pipeline","branch":"main","status":"Passed","environment":"QA","duration":"40s","passRate":100,"triggeredBy":"CI","commit":"\\\${{ github.sha }}","testsCount":1,"passedCount":1,"skippedCount":0,"failedCount":0,"suite":"Smoke"}]}' > telemetry.json\n`)}
                   className="hover:text-white px-2 py-0.5 bg-zinc-900 rounded border border-zinc-800 flex items-center gap-1 cursor-pointer transition-colors"
                 >
                   <Clipboard size={10} /> {copiedText ? "Copied!" : "Copy YAML"}
                 </button>
               </div>
 
-              <div className="bg-zinc-950 border border-zinc-900 rounded p-4 font-mono text-[11px] text-zinc-300 space-y-2 whitespace-pre overflow-x-auto select-all leading-relaxed max-h-[220px]">
-                <div><span className="text-[#a855f7]">name:</span> Test Runs Test Report Pipeline</div>
+              <div className="bg-[#0c0c0c] border border-zinc-900 rounded p-4 font-mono text-[11px] text-zinc-300 space-y-2 whitespace-pre overflow-x-auto select-all leading-relaxed max-h-[220px]">
+                <div><span className="text-[#a855f7]">name:</span> AWARE Test Report Pipeline</div>
                 <div><span className="text-[#a855f7]">on:</span></div>
                 <div>  <span className="text-[#a855f7]">push:</span></div>
                 <div>    <span className="text-[#a855f7]">branches:</span> [ main ]</div>
@@ -806,10 +719,10 @@ export default function SettingsView({
             <div className="space-y-6 animate-fade-in text-xs leading-relaxed text-zinc-300">
               
               {/* Configuration Panel */}
-              <div className="p-4 bg-zinc-950 border border-zinc-900 rounded-lg space-y-4 shadow-xl">
+              <div className="p-4 bg-[#0a0a0a] border border-zinc-900 rounded-lg space-y-4 shadow-xl">
                 <div className="flex items-center justify-between border-b border-zinc-900 pb-3">
                   <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                    <Sliders size={16} className="text-blue-400" /> 
+                    <Sliders size={16} className="text-[#4daeff]" /> 
                     <span>Live Telemetry Integration Parameters</span>
                   </h4>
                   <span className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold ${
@@ -829,7 +742,7 @@ export default function SettingsView({
                       value={localFilePath}
                       onChange={(e) => setLocalFilePath(e.target.value)}
                       placeholder="./telemetry_data.json"
-                      className="w-full bg-zinc-900 border border-zinc-800 focus:border-blue-500/60 rounded px-2.5 py-1.5 text-zinc-200 font-mono text-xs focus:outline-none transition-all"
+                      className="w-full bg-[#121212] border border-zinc-800 focus:border-[#4daeff]/60 rounded px-2.5 py-1.5 text-zinc-200 font-mono text-xs focus:outline-none transition-all"
                     />
                     <p className="text-[9px] text-zinc-500">Relative file path or absolute endpoint hosting your test output JSON.</p>
                   </div>
@@ -840,7 +753,7 @@ export default function SettingsView({
                     <select
                       value={localPollRate}
                       onChange={(e) => setLocalPollRate(Number(e.target.value))}
-                      className="w-full bg-zinc-900 border border-zinc-800 focus:border-blue-500/60 rounded px-2.5 py-1.5 text-zinc-200 font-mono text-xs focus:outline-none transition-all cursor-pointer"
+                      className="w-full bg-[#121212] border border-zinc-800 focus:border-[#4daeff]/60 rounded px-2.5 py-1.5 text-zinc-200 font-mono text-xs focus:outline-none transition-all cursor-pointer"
                     >
                       <option value="5000">5 seconds (High Frequency)</option>
                       <option value="15000">15 seconds (Standard)</option>
@@ -889,7 +802,7 @@ export default function SettingsView({
                         onUpdateConfig(localFilePath, localPollRate, localSyncEnabled);
                       }
                     }}
-                    className="px-4 py-1.5 bg-blue-500 hover:bg-blue-500/90 text-black font-bold rounded text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer"
+                    className="px-4 py-1.5 bg-[#4daeff] hover:bg-[#4daeff]/90 text-black font-bold rounded text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer"
                   >
                     Save & Apply Config
                   </button>
@@ -904,11 +817,11 @@ export default function SettingsView({
                       <Sparkles size={15} className="text-[#a855f7]" />
                       <span>Interactive Test Runner Integration Generator</span>
                     </h4>
-                    <p className="text-[11px] text-zinc-400">Generate and copy custom reporters tailored to output Test Runs-compliant telemetry payloads automatically.</p>
+                    <p className="text-[11px] text-zinc-400">Generate and copy custom reporters tailored to output AWARE-compliant telemetry payloads automatically.</p>
                   </div>
                   
                   {/* Runner selection */}
-                  <div className="flex bg-zinc-950 border border-zinc-800 p-0.5 rounded text-[10px] font-mono shrink-0">
+                  <div className="flex bg-[#0a0a0a] border border-zinc-800 p-0.5 rounded text-[10px] font-mono shrink-0">
                     <button
                       onClick={() => setActiveRunner('playwright')}
                       className={`px-3 py-1 rounded transition-all cursor-pointer ${activeRunner === 'playwright' ? 'bg-[#1c1c1c] text-white font-bold' : 'text-zinc-500 hover:text-zinc-300'}`}
@@ -933,7 +846,7 @@ export default function SettingsView({
                 {activeRunner === 'playwright' && (
                   <div className="space-y-3.5">
                     <div className="flex justify-between items-center text-[10px] font-mono text-zinc-500">
-                      <span>CUSTOM PLAYWRIGHT REPORTER (Test Runs-REPORTER.TS)</span>
+                      <span>CUSTOM PLAYWRIGHT REPORTER (AWARE-REPORTER.TS)</span>
                       <button 
                         onClick={() => copyToClipboard(`import { Reporter, TestCase, TestResult, FullResult } from '@playwright/test/reporter';
 import fs from 'fs';
@@ -980,11 +893,11 @@ class AwareReporter implements Reporter {
       testCases: this.cases
     };
     fs.writeFileSync('${localFilePath}', JSON.stringify(payload, null, 2));
-    console.log('✓ Compiled Test Runs telemetries saved to ${localFilePath}');
+    console.log('✓ Compiled AWARE telemetries saved to ${localFilePath}');
   }
 }
 export default AwareReporter;`)}
-                        className="hover:text-white px-2 py-0.5 bg-zinc-950 rounded border border-zinc-800 flex items-center gap-1 cursor-pointer transition-colors"
+                        className="hover:text-white px-2 py-0.5 bg-[#0a0a0a] rounded border border-zinc-800 flex items-center gap-1 cursor-pointer transition-colors"
                       >
                         <Clipboard size={10} /> {copiedText ? "Copied!" : "Copy Reporter"}
                       </button>
@@ -994,7 +907,7 @@ export default AwareReporter;`)}
                       <div><span className="text-[#a855f7]">import</span> {"{ Reporter, TestCase, TestResult, FullResult }"} <span className="text-[#a855f7]">from</span> <span className="text-emerald-400">'@playwright/test/reporter'</span>;</div>
                       <div><span className="text-[#a855f7]">import</span> fs <span className="text-[#a855f7]">from</span> <span className="text-emerald-400">'fs'</span>;</div>
                       <div className="text-zinc-500">{"\n// Saves the test run metadata as an ingestion contract"}</div>
-                      <div><span className="text-[#a855f7]">class</span> <span className="text-blue-400">AwareReporter</span> <span className="text-[#a855f7]">implements</span> Reporter {"{"}</div>
+                      <div><span className="text-[#a855f7]">class</span> <span className="text-[#4daeff]">AwareReporter</span> <span className="text-[#a855f7]">implements</span> Reporter {"{"}</div>
                       <div>  onEnd(result: FullResult) {"{"}</div>
                       <div>    <span className="text-[#a855f7]">const</span> payload = {"{"}</div>
                       <div>      version: <span className="text-emerald-400">"1.2.0-secure"</span>,</div>
@@ -1059,7 +972,7 @@ export default defineConfig({
     },
   },
 });`)}
-                        className="hover:text-white px-2 py-0.5 bg-zinc-950 rounded border border-zinc-800 flex items-center gap-1 cursor-pointer transition-colors"
+                        className="hover:text-white px-2 py-0.5 bg-[#0a0a0a] rounded border border-zinc-800 flex items-center gap-1 cursor-pointer transition-colors"
                       >
                         <Clipboard size={10} /> {copiedText ? "Copied!" : "Copy Hook Configuration"}
                       </button>
@@ -1085,7 +998,7 @@ export default defineConfig({
                 {activeRunner === 'vitest_jest' && (
                   <div className="space-y-3.5">
                     <div className="flex justify-between items-center text-[10px] font-mono text-zinc-500">
-                      <span>VITEST GLOBAL REPORTER & DEPLOY HOOK (Test Runs-VITEST-SETUP.TS)</span>
+                      <span>VITEST GLOBAL REPORTER & DEPLOY HOOK (AWARE-VITEST-SETUP.TS)</span>
                       <button 
                         onClick={() => copyToClipboard(`import fs from 'fs';
 
@@ -1110,7 +1023,7 @@ export default function globalTeardown() {
   fs.writeFileSync('${localFilePath}', JSON.stringify(telemetry, null, 2));
   console.log('✓ Vitest/Jest telemetry written to ${localFilePath}');
 }`)}
-                        className="hover:text-white px-2 py-0.5 bg-zinc-950 rounded border border-zinc-800 flex items-center gap-1 cursor-pointer transition-colors"
+                        className="hover:text-white px-2 py-0.5 bg-[#0a0a0a] rounded border border-zinc-800 flex items-center gap-1 cursor-pointer transition-colors"
                       >
                         <Clipboard size={10} /> {copiedText ? "Copied!" : "Copy Setup"}
                       </button>
@@ -1118,7 +1031,7 @@ export default function globalTeardown() {
 
                     <div className="bg-[#070707] border border-zinc-900 rounded p-4 font-mono text-[11px] text-zinc-300 space-y-1 whitespace-pre overflow-x-auto select-all leading-relaxed max-h-[250px]">
                       <div><span className="text-[#a855f7]">import</span> fs <span className="text-[#a855f7]">from</span> <span className="text-emerald-400">'fs'</span>;</div>
-                      <div><span className="text-[#a855f7]">export default function</span> <span className="text-blue-400">globalTeardown</span>() {"{"}</div>
+                      <div><span className="text-[#a855f7]">export default function</span> <span className="text-[#4daeff]">globalTeardown</span>() {"{"}</div>
                       <div>  <span className="text-[#a855f7]">const</span> telemetry = {"{ ... };"}</div>
                       <div>  fs.writeFileSync(<span className="text-emerald-400">"{localFilePath}"</span>, JSON.stringify(telemetry, <span className="text-[#a855f7]">null</span>, <span className="text-amber-400">2</span>));</div>
                       <div>{"}"}</div>
@@ -1129,14 +1042,14 @@ export default function globalTeardown() {
 
               {/* Multi-Environment Deployment Strategies */}
               <div className="space-y-3">
-                <span className="text-[10px] font-mono uppercase font-bold text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] font-mono uppercase font-bold text-[#4daeff] bg-[#4daeff]/10 px-1.5 py-0.5 rounded">
                   Multi-Environment Pipeline Orchestration
                 </span>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="p-4 bg-zinc-900/40 border border-zinc-800/80 rounded-lg space-y-1.5">
                     <div className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                      <span className="w-2 h-2 rounded-full bg-[#4daeff]"></span>
                       <strong className="text-white font-semibold">QA (Quality Assurance)</strong>
                     </div>
                     <p className="text-[11px] text-zinc-400">
